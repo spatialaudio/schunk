@@ -76,7 +76,7 @@ class Module:
         """
         self._connection = connection
 
-    def cmd_reference(self):
+    def reference(self):
         """2.1.1 CMD REFERENCE (0x92).
 
         A reference movement is completed.
@@ -198,14 +198,14 @@ class Module:
         """2.1.18 SET TARGET TIME (0xA4)."""
         self._send(0xA4, struct.pack('<f', time), b'OK')
 
-    def cmd_stop(self):
+    def stop(self):
         """2.1.19 CMD STOP (0x91)."""
         self._send(0x91, expected=b'OK')
 
     # Not implemented (see warnings in Schunk manual):
     # 2.1.20 CMD EMERGENCY STOP (0x90)
 
-    def cmd_toggle_impulse_message(self):
+    def toggle_impulse_message(self):
         """2.2.6 CMD TOGGLE IMPULSE MESSAGE (0xE7)."""
         response = self._send(0xE7)
         if response == b'ON':
@@ -322,11 +322,11 @@ class Module:
         pos, vel, cur, status, error = self._send(0x95, data, '<3fBB')
         return pos, vel, cur, decode_status(status), error
 
-    def cmd_reboot(self):
+    def reboot(self):
         """2.5.2 CMD REBOOT (0xE0)."""
         self._send(0xE0, expected=b'OK')
 
-    def cmd_ack(self):
+    def ack(self):
         """2.8.1.4 CMD ACK (0x8B).
 
         Acknowledgement of a pending error message.

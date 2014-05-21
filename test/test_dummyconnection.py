@@ -15,8 +15,8 @@ class DummyConnection:
 
 success_cases = {
     # 2.1.1 CMD REFERENCE (0x92)
-    'cmd_reference': (
-        'cmd_reference',
+    'reference': (
+        'reference',
         (),
         {},
         b'\x01\x92',
@@ -108,8 +108,8 @@ success_cases = {
         None),
 
     # 2.1.19 CMD STOP (0x91)
-    'cmd_stop': (
-        'cmd_stop',
+    'stop': (
+        'stop',
         (),
         {},
         b'\x01\x91',
@@ -117,15 +117,15 @@ success_cases = {
         None),
 
     # 2.2.6 CMD TOGGLE IMPULSE MESSAGE (0xE7)
-    'cmd_toggle_impulse_message_off': (
-        'cmd_toggle_impulse_message',
+    'toggle_impulse_message_off': (
+        'toggle_impulse_message',
         (),
         {},
         b'\x01\xE7',
         b'\x04\xE7OFF',
         False),
-    'cmd_toggle_impulse_message_on': (
-        'cmd_toggle_impulse_message',
+    'toggle_impulse_message_on': (
+        'toggle_impulse_message',
         (),
         {},
         b'\x01\xE7',
@@ -211,8 +211,8 @@ success_cases = {
          0x00)),
 
     # 2.5.2 CMD REBOOT (0xE0)
-    'cmd_reboot': (
-        'cmd_reboot',
+    'reboot': (
+        'reboot',
         (),
         {},
         b'\x01\xE0',
@@ -240,8 +240,8 @@ success_cases = {
         True),
 
     # 2.8.1.4 CMD ACK (0x8B)
-    'cmd_ack': (
-        'cmd_ack',
+    'ack': (
+        'ack',
         (),
         {},
         b'\x01\x8B',
@@ -294,8 +294,8 @@ class DummySerialManager:
 
 rs232_success_cases = {
     # 6.1.1.1 Referencing
-    'cmd_reference': (
-        'cmd_reference',
+    'reference': (
+        'reference',
         (),
         {},
         b'\x05\x01\x01\x92\xD1\x31',
@@ -312,8 +312,8 @@ rs232_success_cases = {
         3.358333110809326),
 
     # 6.1.1.4 Troubleshooting
-    'cmd_ack': (
-        'cmd_ack',
+    'ack': (
+        'ack',
         (),
         {},
         b'\x05\x01\x01\x8B\x10\xFB',
