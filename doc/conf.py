@@ -67,8 +67,9 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
+author = 'Matthias Geier'
 project = 'Schunk Motion Protocol for Python 3'
-copyright = '2014, Matthias Geier'
+copyright = '2014, ' + author
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -223,7 +224,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
   ('index', 'SchunkMotionProtocolforPython3.tex', project,
-   'Matthias Geier', 'howto'),
+   author, 'howto'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -245,3 +246,10 @@ latex_show_urls = 'footnote'
 
 # If false, no module index is generated.
 latex_domain_indices = False
+
+
+# -- Options for epub output ----------------------------------------------
+
+epub_author = author
+
+epub_use_index = False
