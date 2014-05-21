@@ -47,10 +47,6 @@ Example
 import struct
 
 
-# TODO: custom exception SchunkError?
-# TODO: document exceptions in docstrings
-
-
 class Module:
 
     """A Schunk module.
@@ -213,7 +209,7 @@ class Module:
         elif response == b'OFF':
             return False
         else:
-            raise RuntimeError("Unexpected response: {}".format(response))
+            raise SchunkError("Unexpected response: {}".format(response))
 
     def get_config(self, param=None):
         """2.3.2 GET CONFIG (0x80).
@@ -222,7 +218,7 @@ class Module:
         def sub_command(cmd, format_string):
             byte1, the_rest = self._send(0x80, cmd, '<s' + format_string)
             if byte1 != cmd:
-                raise RuntimeError("Unexpected subcommand: {}".format(byte1))
+                raise SchunkError("Unexpected subcommand: {}".format(byte1))
             return the_rest
 
         one_byte = {
@@ -292,10 +288,10 @@ class Module:
             result = self._send(0x80, b'\xFE')
             cmd = result[0]
             if cmd != 0xFE:
-                raise RuntimeError("Unexpected subcommand: {}".format(cmd))
+                raise SchunkError("Unexpected subcommand: {}".format(cmd))
             return result[1:]
         else:
-            raise RuntimeError("Invalid sub-command: {}".format(param))
+            raise SchunkError("Invalid sub-command: {}".format(param))
 
     def get_state(self):
         """2.5.1 GET STATE (0x95).
@@ -346,7 +342,7 @@ class Module:
         returned = self._send(0xE4, expected=_test_format_string)
         for ret, val in zip(returned, _test_values):
             if abs(ret - val) > 0.000001:
-                raise RuntimeError("Wrong result for {}: {}".format(val, ret))
+                raise SchunkError("Wrong result for {}: {}".format(val, ret))
         return True
 
     def check_pc_mc_communication(self):
@@ -395,10 +391,10 @@ class Module:
         response = self._connection.send(data)
 
         if len(response) < 2:
-            raise RuntimeError("Not enough data in response")
+            raise SchunkError("Not enough data in response")
         dlen, cmd_code = response[:2]
         if dlen != len(response) - 1:
-            raise RuntimeError("D-Len mismatch in response")
+            raise SchunkError("D-Len mismatch in response")
         if dlen == 2:
             error_prefix = {
                 0x88: "CMD ERROR: ",
@@ -406,9 +402,9 @@ class Module:
                 0x8A: "CMD INFO: ",
                 command: "",
             }.get(cmd_code, "Command code 0x{:02X}: ")
-            raise RuntimeError(error_prefix + decode_error(response[2]))
+            raise SchunkError(error_prefix + decode_error(response[2]))
         if cmd_code != command:
-            raise RuntimeError(
+            raise SchunkError(
                 "Unexpected command code in response: {}".format(hex(command)))
         response = response[2:]  # remove D-Len and command code
 
@@ -417,7 +413,7 @@ class Module:
                 return
             else:
                 err = "Unexpected response: {} instead of {}"
-                raise RuntimeError(err.format(response, expected))
+                raise SchunkError(err.format(response, expected))
 
         format_string = None
         if isinstance(expected, str):
@@ -427,7 +423,7 @@ class Module:
         if expected is not None:
             if len(response) != expected:
                 err = "Unexpected payload size in reponse: {} instead of {}"
-                raise RuntimeError(err.format(len(response), expected))
+                raise SchunkError(err.format(len(response), expected))
 
         if format_string is not None:
             response = struct.unpack(format_string, response)
@@ -460,9 +456,14 @@ class Module:
         elif len(response) == 4:
             est_time, = struct.unpack('<f', response)
         else:
-            raise RuntimeError("Unexpected reponse: {}".format(response))
+            raise SchunkError("Unexpected reponse: {}".format(response))
 
         return est_time
+
+
+class SchunkError(Exception):
+    """This exception is raised on all kinds of errors."""
+    pass
 
 
 class RS232Connection:
@@ -558,36 +559,50 @@ class RS232Connection:
         with self._serialmanager(*self._serial_args,
                                  **self._serial_kwargs) as serial:
             if serial.write(data) != len(data):
-                raise RuntimeError("RS232: Error sending data")
+                raise SchunkRS232Error("Error sending data")
             header = serial.read(3)
             if len(header) < 3:
-                raise RuntimeError("RS232: Error reading header")
+                raise SchunkRS232Error("Error reading header")
 
             msg_type, module_id, dlen = header
             if module_id != self._id:
-                raise RuntimeError("RS232: Module ID mismatch")
+                raise SchunkRS232Error("Module ID mismatch")
             elif msg_type not in (0x03, 0x07):
-                raise RuntimeError("RS232: Unexpected message type "
-                                   "in response: 0x{:02X}".format(msg_type))
+                raise SchunkRS232Error("Unexpected message type in response: "
+                                       "0x{:02X}".format(msg_type))
             crclen = 2
             the_rest = serial.read(dlen + crclen)
 
         if len(the_rest) < dlen + crclen:
-            raise RuntimeError("RS232: Not enough data in response")
+            raise SchunkRS232Error("Not enough data in response")
 
         crc = the_rest[-crclen:]
         the_rest = the_rest[:-crclen]
         if crc != crc16(header + the_rest):
-            raise RuntimeError("RS232: CRC error in response")
+            raise SchunkRS232Error("CRC error in response")
 
         if msg_type == 0x03 and dlen != 2:
             # This should never happen, but who knows ...
-            raise RuntimeError(
-                "RS232: Message type 0x03, D-Len {}".format(dlen))
+            raise SchunkRS232Error("Message type 0x03, D-Len {}".format(dlen))
 
         # Note: error checking (if dlen == 2) is done in _send()
 
         return struct.pack('B', dlen) + the_rest
+
+
+class SchunkRS232Error(SchunkError):
+    """Exception class for errors related to RS232 connections.
+
+    It is derived from :class:`SchunkError`, so it is normally enough to
+    check only for this::
+
+        try:
+            ...
+        except SchunkError:
+            ...
+
+    """
+    pass
 
 
 def decode_status(status):
