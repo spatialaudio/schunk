@@ -167,7 +167,7 @@ class Module:
 
         Initially, the target velocity is set to 10% of the maximum.
 
-	"""
+        """
         self._send(0xA0, struct.pack('<f', velocity), b'OK')
 
     def set_target_acc(self, acceleration):
