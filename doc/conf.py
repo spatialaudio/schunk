@@ -207,13 +207,15 @@ htmlhelp_basename = 'SchunkMotionProtocolforPython3doc'
 
 latex_elements = {
 # The paper size ('letterpaper' or 'a4paper').
-#'papersize': 'letterpaper',
+'papersize': 'a4paper',
 
 # The font size ('10pt', '11pt' or '12pt').
 #'pointsize': '10pt',
 
 # Additional stuff for the LaTeX preamble.
 #'preamble': '',
+
+'printindex': '',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
@@ -221,7 +223,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
   ('index', 'SchunkMotionProtocolforPython3.tex', project,
-   'Matthias Geier', 'manual'),
+   'Matthias Geier', 'howto'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -236,10 +238,10 @@ latex_documents = [
 #latex_show_pagerefs = False
 
 # If true, show URL addresses after external links.
-#latex_show_urls = False
+latex_show_urls = 'footnote'
 
 # Documents to append as an appendix to all manuals.
 #latex_appendices = []
 
 # If false, no module index is generated.
-#latex_domain_indices = True
+latex_domain_indices = False

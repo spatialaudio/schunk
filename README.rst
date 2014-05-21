@@ -25,7 +25,7 @@ Devices
 
 Only 1 device was tested: `Schunk PR-70 Servo Electric Swivel Unit`__.
 
-__ http://schunk.partcommunity.com/portal/portal/schunk?info=schunk/greifsysteme/drehmodule/drehmodule_elektrisch/schwenkeinheiten/universal_schwenkeinheiten/pr_asm_at.prj
+__ http://tinyurl.com/schunk-pr/
 
 Defaults for this device: RS232, baudrate=9600, module ID 11 (0x0B).
 
