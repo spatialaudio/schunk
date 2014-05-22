@@ -837,10 +837,10 @@ unit_systems = {
     0x03: '[rad]',
     0x04: '[Degree]',
     0x05: '[Intern]',
-    0x06: '[μm] Integer',
-    0x07: '[μDegree] Integer',
-    0x08: '[μInch] Integer',
-    0x09: '[Milli − degree] Integer',
+    0x06: '[µm] Integer',
+    0x07: '[µDegree] Integer',
+    0x08: '[µInch] Integer',
+    0x09: '[Milli - degree] Integer',
 }
 """Available unit systems.
 
