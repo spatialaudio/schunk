@@ -140,7 +140,7 @@ class Module:
 
         See Also
         --------
-        set_target_time
+        move_pos, set_target_time
 
         """
         return self._move_pos_helper(0xB1, position, velocity,
@@ -152,7 +152,7 @@ class Module:
 
         See Also
         --------
-        set_target_time
+        move_pos_rel, set_target_time
 
         """
         return self._move_pos_helper(0xB9, position, velocity,
@@ -167,7 +167,7 @@ class Module:
         self._send(0xA0, struct.pack('<f', velocity), b'OK')
 
     def set_target_acc(self, acceleration):
-        """2.1.15 SET TARGET VEL (0xA1).
+        """2.1.15 SET TARGET ACC (0xA1).
 
         Initially, the target acceleration is set to 10% of the maximum.
 
@@ -202,7 +202,15 @@ class Module:
     # 2.1.20 CMD EMERGENCY STOP (0x90)
 
     def toggle_impulse_message(self):
-        """2.2.6 CMD TOGGLE IMPULSE MESSAGE (0xE7)."""
+        """2.2.6 CMD TOGGLE IMPULSE MESSAGE (0xE7).
+
+        Returns
+        -------
+        bool
+            ``True`` if impulse messages were switched on, ``False`` if
+            they were switched off.
+
+        """
         response = self._send(0xE7)
         if response == b'ON':
             return True
@@ -308,8 +316,7 @@ class Module:
         position, velocity, current : float
             Dito.
         status : dict
-            Use :func:`decode_status` with ``status=0`` to see all
-            status keys.
+            See :func:`decode_status`.
         error_code : int
             Use :func:`decode_error` to get a string representation.
 
@@ -361,15 +368,18 @@ class Module:
     def get_detailed_error_info(self):
         """2.8.1.5 GET DETAILED ERROR INFO (0x96).
 
-        .. note:: If no error is active, or no detailed information is
-                  available, the command is replied with an
-                  "INFO FAILED" exception.
-
         Returns
         -------
         bytes
             Command (1 byte), error code (1 byte), data (float).
             The shown value can be interpreted by the SCHUNK Service.
+
+        Raises
+        ------
+        SchunkError
+            If no error is active, or no detailed information is
+            available, the command is raising an exception saying:
+            ``INFO FAILED (0x05)``.
 
         """
         return self._send(0x96)
@@ -477,9 +487,9 @@ class RS232Connection:
     def __init__(self, id, serialmanager, *args, **kwargs):
         """Prepare a serial connection using the RS232 protocol.
 
-        This can be used to initialize a :mod:`schunk.Module`.
+        This can be used to initialize a :class:`Module`.
 
-        The connection is opened and closed on each :func:`send`.
+        The connection is opened and closed on each :meth:`send`.
 
         Parameters
         ----------
@@ -510,11 +520,11 @@ class RS232Connection:
         Examples
         --------
 
-        A typical use case using PySerial_::
+        Using PySerial_:
 
-            import serial
-            conn = schunk.RS232Connection(0x0B, serial.Serial, port=0,
-                                          baudrate=9600, timeout=1))
+        >>> import serial
+        >>> conn = RS232Connection(0x0B, serial.Serial, port=0,
+        ...                        baudrate=9600, timeout=1)
 
         """
         self._id = id
@@ -534,8 +544,9 @@ class RS232Connection:
         The 2 CRC bytes are checked (and removed), as well as the 2
         Group/ID bytes.
         If the first byte indicates an error (0x03), the response is
-        returned normally. Error responses always have a D-Len of 2,
-        i.e. they have 3 bytes: D-Len, command code and error code.
+        returned normally and the error has to be handled in the calling
+        function. Error responses always have a D-Len of 2, i.e. they
+        have 3 bytes: D-Len, command code and error code.
 
         Parameters
         ----------
@@ -583,7 +594,8 @@ class RS232Connection:
 
         if msg_type == 0x03 and dlen != 2:
             # This should never happen, but who knows ...
-            raise SchunkRS232Error("Message type 0x03, D-Len {}".format(dlen))
+            raise SchunkRS232Error(
+                "Message type 0x03, D-Len {}, data: {}".format(dlen, the_rest))
 
         # Note: error checking (if dlen == 2) is done in _send()
 
@@ -593,12 +605,15 @@ class RS232Connection:
 class SchunkRS232Error(SchunkError):
     """Exception class for errors related to RS232 connections.
 
-    It is derived from :class:`SchunkError`, so it is normally enough to
-    check only for this::
+    It is derived from :exc:`SchunkError`, so it is normally
+    sufficient to check only for this::
 
         try:
             ...
-        except SchunkError:
+            # Something that may throw SchunkError or SchunkRS232Error
+            ...
+        except SchunkError as e:
+            # Do something with e
             ...
 
     """
@@ -606,14 +621,34 @@ class SchunkRS232Error(SchunkError):
 
 
 def decode_status(status):
-    """Given a status byte return a dictionary of statuses."""
+    """This is internally used in :meth:`Module.get_state`.
+
+    >>> status = decode_status(0x03)
+    >>> from pprint import pprint
+    >>> pprint(status)  # to get pretty dict display
+    {'brake': False,
+     'error': False,
+     'move_end': False,
+     'moving': True,
+     'position_reached': False,
+     'program_mode': False,
+     'referenced': True,
+     'warning': False}
+
+    """
     statuses = ('referenced', 'moving', 'program_mode', 'warning', 'error',
                 'brake', 'move_end', 'position_reached')
     return {name: bool(status & 2 ** bit) for bit, name in enumerate(statuses)}
 
 
 def decode_error(error):
-    """Given an error code return an error string."""
+    """Given an error code return an error string.
+
+    This can be used with :meth:`Module.get_state`.
+
+    >>> decode_error(0x1E)
+    'INFO WRONG PARAMETER (0x1E)'
+    """
     return "{} (0x{:02X})".format(_error_codes.get(error, "UNKNOWN"), error)
 
 
