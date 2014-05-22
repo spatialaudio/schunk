@@ -241,8 +241,25 @@ def test_success(key):
     assert result == expected_result
 
 
+# 2.3.1 SET CONFIG (0x81)
+set_config_success = {
+    'module_id': (
+        'module_id',
+        12,
+        b'\x03\x81\x01\x0C',
+        b'\x04\x81OK\x01'),
+}
+
+
+@pytest.mark.parametrize("key", set_config_success)
+def test_set_config(key):
+    property, value, expected_bytes, answer_bytes = set_config_success[key]
+    mod = schunk.Module(DummyConnection(expected_bytes, answer_bytes))
+    setattr(mod.config, property, value)
+
+
 # 2.3.2 GET CONFIG (0x80)
-config_success = {
+get_config_success = {
     'unit_system': (
         'unit_system',
         b'\x02\x80\x06',
@@ -292,10 +309,10 @@ config_success = {
 }
 
 
-@pytest.mark.parametrize("key", config_success)
+@pytest.mark.parametrize("key", get_config_success)
 def test_get_config(key):
     property, expected_bytes, answer_bytes, expected_result = \
-        config_success[key]
+        get_config_success[key]
     mod = schunk.Module(DummyConnection(expected_bytes, answer_bytes))
     result = getattr(mod.config, property)
     assert result == expected_result

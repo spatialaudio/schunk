@@ -222,9 +222,13 @@ class Module:
 
     @property
     def config(self):
-        """2.3.2 GET CONFIG (0x80).
+        """2.3.1 SET CONFIG (0x81) / 2.3.2 GET CONFIG (0x80).
 
-        The `config` object has several attributes which can be queried:
+        The `config` object has several attributes which can be queried
+        and changed.
+        Except where otherwise noted, the new settings are immediately
+        stored in the EEPROM but are only applied after the module has
+        been restarted.
 
         Attributes
         ----------
@@ -236,16 +240,19 @@ class Module:
         firmware_date : bytes
 
         eeprom : bytes
-            All configuration data is read in one process.
+            All configuration data is read/written in one process.
+            Depending on the type of user certain data might not be
+            written. After successful writing of the data, the module is
+            rebooted.
 
             .. note:: This command should not be used with one's own
                       applications, as the structure of the data to be
-                      received is not known.
+                      received/sent is not known.
 
-        module_id : int
-        group_id : int
-        rs232_baudrate : int
-        can_baudrate : int
+        module_id : int (1..255)
+        group_id : int (1..255)
+        rs232_baudrate : int (1200, 2400, 4800, 9600, 19200, 38400)
+        can_baudrate : int (50, 100, 125, 250, 500, 800, 1000)
 
         communication_mode : int
             See :const:`communication_modes`.
@@ -254,7 +261,18 @@ class Module:
             See :const:`unit_systems`.
 
         soft_high : float
+            The transferred value is not written to the EEPROM. The
+            settings are applied immediately.
+
         soft_low : float
+            The transferred value is not written to the EEPROM. The
+            settings are applied immediately.
+
+        gear_ratio : float
+            The Gear Ratio 1 is changed (the command has no use with an
+            integer unit system). The transferred value is written to
+            the EEPROM and applied immediately.
+
         max_velocity : float
         max_acceleration : float
         max_current : float
@@ -473,6 +491,7 @@ class _Config:
         'reference_offset':   (b'\x14', 'f'),
         'serial_number':      (b'\x15', 'I'),
         'order_number':       (b'\x16', 'I'),
+        'gear_ratio':         (b'\x18', 'f'),
         'eeprom':             (b'\xFE', None),
 
         'module_type':        (None, '8s4x2x2x2x26x'),
@@ -498,6 +517,7 @@ class _Config:
         return self._params
 
     def __getattr__(self, name):
+        """2.3.2 GET CONFIG (0x80)."""
         try:
             cmd_byte, format_string = self._params[name]
         except KeyError:
@@ -519,7 +539,18 @@ class _Config:
         return result
 
     def __setattr__(self, name, value):
-        raise NotImplementedError("Setting parameter is not (yet) implemented")
+        """2.3.1 SET CONFIG (0x81)."""
+        try:
+            cmd_byte, format_string = self._params[name]
+        except KeyError:
+            raise AttributeError("Invalid parameter: {}".format(name))
+
+        if format_string is not None:
+            value = struct.pack('<' + format_string, value)
+
+        result, = self._module._send(0x81, cmd_byte + value, '3s')
+        if result != b'OK' + cmd_byte:
+            raise SchunkError("Error setting {}".format(name))
 
 
 class RS232Connection:
