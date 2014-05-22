@@ -309,7 +309,7 @@ class Module:
         status : dict
             See :func:`decode_status`.
         error_code : int
-            Use :func:`decode_error` to get a string representation.
+            See :const:`error_codes` for a mapping to strings.
 
         """
         data = struct.pack('<fB', 0.0, 0x01 | 0x02 | 0x04)
@@ -397,13 +397,17 @@ class Module:
         if dlen != len(response) - 1:
             raise SchunkError("D-Len mismatch in response")
         if dlen == 2:
+            error = response[2]
             error_prefix = {
                 0x88: "CMD ERROR: ",
                 0x89: "CMD WARNING: ",
                 0x8A: "CMD INFO: ",
                 command: "",
-            }.get(cmd_code, "Command code 0x{:02X}: ")
-            raise SchunkError(error_prefix + decode_error(response[2]))
+            }.get(cmd_code, "Command code 0x{:02X}: ".format(cmd_code))
+            error_string = "{} (0x{:02X})".format(
+                error_codes.get(error, "UNKNOWN"), error)
+            raise SchunkError(error_prefix + error_string)
+
         if cmd_code != command:
             raise SchunkError(
                 "Unexpected command code in response: {}".format(hex(command)))
@@ -718,17 +722,6 @@ def decode_status(status):
     return {name: bool(status & 2 ** bit) for bit, name in enumerate(statuses)}
 
 
-def decode_error(error):
-    """Given an error code return an error string.
-
-    This can be used with :meth:`Module.get_state`.
-
-    >>> decode_error(0x1E)
-    'INFO WRONG PARAMETER (0x1E)'
-    """
-    return "{} (0x{:02X})".format(_error_codes.get(error, "UNKNOWN"), error)
-
-
 def crc16_increment(crc, data):
     """Incrementally calculate CRC16.
 
@@ -851,8 +844,7 @@ See :attr:`Module.config`.
 """
 
 
-# Note: error in Schunk manual: key 0xE4 is not unique!
-_error_codes = {
+error_codes = {
     0x00: "NO ERROR",  # not in Schunk manual; added for convenience
     0x01: "INFO BOOT",
     0x02: "INFO NO FREE SPACE",
@@ -904,6 +896,13 @@ _error_codes = {
     0x76: "ERROR CABLE BREAK",
     0x78: "ERROR MOTOR TEMP",
 }
+"""Error codes.
+
+See also :meth:`Module.get_state`.
+
+.. note:: Error in Schunk manual: key 0xE4 (= 228) is not unique!
+
+"""
 
 _test_values = (-1.2345, 47.11, 287454020, -1122868, 512, -20482)
 _test_format_string = '<2f2i2h'

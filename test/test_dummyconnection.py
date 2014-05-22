@@ -395,7 +395,3 @@ def test_rs232_success(key):
         expected_bytes, answer=answer_bytes))
     result = getattr(mod, method)(*args, **kwargs)
     assert result == expected_result
-
-
-def test_decode_error():
-    assert schunk.decode_error(0xD9) == "ERROR EMERGENCY STOP (0xD9)"
