@@ -80,10 +80,7 @@ Tests
 
 Tests are implemented using py.test_, run this in the main directory::
 
-    py.test --doctest-modules --ignore setup.py
-
-Note that Python 3.x is required, so this may also be called ``py.test-3`` or
-similar.
+    python3 setup.py test
 
 Examples
 --------
