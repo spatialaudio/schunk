@@ -71,6 +71,10 @@ If you want to make changes to ``schunk.py``, you should type::
 
     python3 setup.py develop
 
+or, alternatively::
+
+    pip3 install -e .
+
 Tests
 -----
 
