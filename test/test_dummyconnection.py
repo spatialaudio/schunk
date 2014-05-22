@@ -13,6 +13,7 @@ class DummyConnection:
         assert data == self._expected
         return self._answer
 
+
 success_cases = {
     # 2.1.1 CMD REFERENCE (0x92)
     'reference': (
@@ -132,34 +133,6 @@ success_cases = {
         b'\x03\xE7ON',
         True),
 
-    # 2.3.2 GET CONFIG (0x80)
-    'get_config_unit_system': (
-        'get_config',
-        ('unit_system',),
-        {},
-        b'\x02\x80\x06',
-        b'\x03\x80\x06\x00',
-        '[mm]'),
-    'get_config_default': (
-        'get_config',
-        (),
-        {},
-        b'\x01\x80',
-        # Note: the Schunk manual states that the date string has 21 bytes,
-        # the PR-70 modules returns 5 more bytes, however:
-        b'\x2D\x80\x50\x52\x2D\x37\x30\x00\x00\x00\x00\x00\x00\x00\x79\x00'
-            b'\x03\x00\x12\x02\x31\x31\x3A\x32\x32\x3A\x32\x37\x20\x20\x4A'
-            b'\x75\x6C\x20\x20\x33\x20\x32\x30\x30\x38?????',
-        {
-            'module_type': 'PR-70\x00\x00\x00',
-            'order_number': 0,
-            'firmware_version': 121,  # 1.21
-            'protocol_version': 3,
-            'hardware_version': 530,  # 5.30
-            'firmware_date': '11:22:27  Jul  3 2008?????'
-
-        }),
-
     # 2.5.1 GET STATE (0x95)
     'get_state1': (
         'get_state',
@@ -265,6 +238,66 @@ def test_success(key):
         success_cases[key]
     mod = schunk.Module(DummyConnection(expected_bytes, answer_bytes))
     result = getattr(mod, method)(*args, **kwargs)
+    assert result == expected_result
+
+
+# 2.3.2 GET CONFIG (0x80)
+config_success = {
+    'unit_system': (
+        'unit_system',
+        b'\x02\x80\x06',
+        b'\x03\x80\x06\x00',
+        0),  # '[mm]'
+
+    'module_type': (
+        'module_type',
+        b'\x01\x80',
+        b'\x2D\x80\x50\x52\x2D\x37\x30\x00\x00\x00\x00\x00\x00\x00\x79\x00'
+            b'\x03\x00\x12\x02\x31\x31\x3A\x32\x32\x3A\x32\x37\x20\x20\x4A'
+            b'\x75\x6C\x20\x20\x33\x20\x32\x30\x30\x38?????',
+        b'PR-70\x00\x00\x00'),
+
+    'firmware_version': (
+        'firmware_version',
+        b'\x01\x80',
+        b'\x2D\x80\x50\x52\x2D\x37\x30\x00\x00\x00\x00\x00\x00\x00\x79\x00'
+            b'\x03\x00\x12\x02\x31\x31\x3A\x32\x32\x3A\x32\x37\x20\x20\x4A'
+            b'\x75\x6C\x20\x20\x33\x20\x32\x30\x30\x38?????',
+        121),  # 1.21
+
+    'protocol_version': (
+        'protocol_version',
+        b'\x01\x80',
+        b'\x2D\x80\x50\x52\x2D\x37\x30\x00\x00\x00\x00\x00\x00\x00\x79\x00'
+            b'\x03\x00\x12\x02\x31\x31\x3A\x32\x32\x3A\x32\x37\x20\x20\x4A'
+            b'\x75\x6C\x20\x20\x33\x20\x32\x30\x30\x38?????',
+        3),
+
+    'hardware_version': (
+        'hardware_version',
+        b'\x01\x80',
+        b'\x2D\x80\x50\x52\x2D\x37\x30\x00\x00\x00\x00\x00\x00\x00\x79\x00'
+            b'\x03\x00\x12\x02\x31\x31\x3A\x32\x32\x3A\x32\x37\x20\x20\x4A'
+            b'\x75\x6C\x20\x20\x33\x20\x32\x30\x30\x38?????',
+        530),  # 5.30
+
+
+    'firmware_date': (
+        'firmware_date',
+        b'\x01\x80',
+        b'\x2D\x80\x50\x52\x2D\x37\x30\x00\x00\x00\x00\x00\x00\x00\x79\x00'
+            b'\x03\x00\x12\x02\x31\x31\x3A\x32\x32\x3A\x32\x37\x20\x20\x4A'
+            b'\x75\x6C\x20\x20\x33\x20\x32\x30\x30\x38?????',
+        b'11:22:27  Jul  3 2008?????'),
+}
+
+
+@pytest.mark.parametrize("key", config_success)
+def test_get_config(key):
+    property, expected_bytes, answer_bytes, expected_result = \
+        config_success[key]
+    mod = schunk.Module(DummyConnection(expected_bytes, answer_bytes))
+    result = getattr(mod.config, property)
     assert result == expected_result
 
 

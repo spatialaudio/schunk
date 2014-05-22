@@ -71,6 +71,7 @@ class Module:
 
         """
         self._connection = connection
+        self._config = _Config(self)
 
     def reference(self):
         """2.1.1 CMD REFERENCE (0x92).
@@ -219,87 +220,59 @@ class Module:
         else:
             raise SchunkError("Unexpected response: {}".format(response))
 
-    def get_config(self, param=None):
+    @property
+    def config(self):
         """2.3.2 GET CONFIG (0x80).
 
+        The `config` object has several attributes which can be queried:
+
+        Attributes
+        ----------
+
+        module_type : bytes
+        firmware_version : int
+        protocol_version : int
+        hardware_version : int
+        firmware_date : bytes
+
+        eeprom : bytes
+            All configuration data is read in one process.
+
+            .. note:: This command should not be used with one's own
+                      applications, as the structure of the data to be
+                      received is not known.
+
+        module_id : int
+        group_id : int
+        rs232_baudrate : int
+        can_baudrate : int
+
+        communication_mode : int
+            See :const:`communication_modes`.
+
+        unit_system : int
+            See :const:`unit_systems`.
+
+        soft_high : float
+        soft_low : float
+        max_velocity : float
+        max_acceleration : float
+        max_current : float
+        nom_current : float
+        max_jerk : float
+        offset_phase_a : int
+        offset_phase_b : int
+
+        data_crc : int
+            A CRC16 over all variable and not module specified
+            paramenters (like serial number, current offset).
+
+        reference_offset : float
+        serial_number : int
+        order_number : int
+
         """
-        def sub_command(cmd, format_string):
-            byte1, the_rest = self._send(0x80, cmd, '<s' + format_string)
-            if byte1 != cmd:
-                raise SchunkError("Unexpected subcommand: {}".format(byte1))
-            return the_rest
-
-        one_byte = {
-            'module_id': b'\x01',
-            'group_id': b'\x02',
-        }
-        two_bytes = {
-            'rs232_baudrate': b'\x03',
-            'can_baudrate': b'\x04',
-            'offset_phase_a': b'\x0E',
-            'offset_phase_b': b'\x0F',
-            'data_crc': b'\x13',
-        }
-        four_bytes_float = {
-            'soft_high': b'\x07',
-            'soft_low': b'\x08',
-            'max_velocity': b'\x09',
-            'max_acceleration': b'\x0A',
-            'max_current': b'\x0B',
-            'nom_current': b'\x0C',
-            'max_jerk': b'\x0D',
-            'reference_offset': b'\x14',
-        }
-        four_bytes_int = {
-            'serial_number': b'\x15',
-            'order_number': b'\x16',
-        }
-
-        if param is None:
-            names = ('module_type', 'order_number', 'firmware_version',
-                     'protocol_version', 'hardware_version', 'firmware_date')
-            # Note: the Schunk manual states that the date string has 21 bytes,
-            # the PR-70 modules returns 5 more bytes, however:
-            config = self._send(0x80, expected='<8sIHHH26s')
-            return {name: value.decode() if isinstance(value, bytes) else value
-                    for name, value in zip(names, config)}
-        elif param in one_byte:
-            return sub_command(one_byte[param], 'B')
-        elif param in two_bytes:
-            return sub_command(two_bytes[param], 'H')
-        elif param in four_bytes_float:
-            return sub_command(four_bytes_float[param], 'f')
-        elif param in four_bytes_int:
-            return sub_command(four_bytes_int[param], 'I')
-        elif param == 'communication_mode':
-            return {
-                0x00: 'AUTO',
-                0x01: 'RS232',
-                0x02: 'CAN',
-                0x03: 'Profibus DPV0',
-                0x04: 'RS232 Silent',
-            }.get(sub_command(b'\x05', 'B'), 'unknown')
-        elif param == 'unit_system':
-            return {
-                0x00: '[mm]',
-                0x01: '[m]',
-                0x02: '[Inch]',
-                0x03: '[rad]',
-                0x04: '[Degree]',
-                0x05: '[Intern]',
-                0x06: '[μm] Integer',
-                0x07: '[μDegree] Integer',
-                0x08: '[μInch] Integer',
-                0x09: '[Milli − degree] Integer',
-            }.get(sub_command(b'\x06', 'B'), 'unknown')
-        elif param == 'eeprom':
-            result = self._send(0x80, b'\xFE')
-            cmd = result[0]
-            if cmd != 0xFE:
-                raise SchunkError("Unexpected subcommand: {}".format(cmd))
-            return result[1:]
-        else:
-            raise SchunkError("Invalid sub-command: {}".format(param))
+        return self._config
 
     def get_state(self):
         """2.5.1 GET STATE (0x95).
@@ -474,6 +447,79 @@ class Module:
 class SchunkError(Exception):
     """This exception is raised on all kinds of errors."""
     pass
+
+
+class _Config:
+
+    """Helper class for the Module.config property."""
+
+    _params = {
+        'module_id':          (b'\x01', 'B'),
+        'group_id':           (b'\x02', 'B'),
+        'rs232_baudrate':     (b'\x03', 'H'),
+        'can_baudrate':       (b'\x04', 'H'),
+        'communication_mode': (b'\x05', 'B'),
+        'unit_system':        (b'\x06', 'B'),
+        'soft_high':          (b'\x07', 'f'),
+        'soft_low':           (b'\x08', 'f'),
+        'max_velocity':       (b'\x09', 'f'),
+        'max_acceleration':   (b'\x0A', 'f'),
+        'max_current':        (b'\x0B', 'f'),
+        'nom_current':        (b'\x0C', 'f'),
+        'max_jerk':           (b'\x0D', 'f'),
+        'offset_phase_a':     (b'\x0E', 'H'),
+        'offset_phase_b':     (b'\x0F', 'H'),
+        'data_crc':           (b'\x13', 'H'),
+        'reference_offset':   (b'\x14', 'f'),
+        'serial_number':      (b'\x15', 'I'),
+        'order_number':       (b'\x16', 'I'),
+        'eeprom':             (b'\xFE', None),
+
+        'module_type':        (None, '8s4x2x2x2x26x'),
+        # 'order_number' is already available
+        'firmware_version':   (None, '8x4xH2x2x26x'),
+        'protocol_version':   (None, '8x4x2xH2x26x'),
+        'hardware_version':   (None, '8x4x2x2xH26x'),
+        # Note: the Schunk manual states that the date string has 21 bytes,
+        # the PR-70 modules returns 5 more bytes, however:
+        'firmware_date':      (None, '8x4x2x2x2x26s'),
+    }
+
+    def __init__(self, module):
+        # Avoid __setattr__:
+        vars(self)['_module'] = module
+
+    def _getAttributeNames(self):
+        """Return all possible attributes.
+
+        This is useful for auto-completion (e.g. IPython).
+
+        """
+        return self._params
+
+    def __getattr__(self, name):
+        try:
+            cmd_byte, format_string = self._params[name]
+        except KeyError:
+            raise AttributeError("Invalid parameter: {}".format(name))
+
+        if cmd_byte is None:
+            result, = self._module._send(0x80, expected=format_string)
+            firstbyte = None
+        elif format_string is None:
+            result = self._module._send(0x80, cmd_byte)
+            firstbyte = result[0:1]
+            result = result[1:]
+        else:
+            firstbyte, result = self._module._send(0x80, cmd_byte,
+                                                   '<s' + format_string)
+        if firstbyte != cmd_byte:
+            raise SchunkError("Unexpected subcommand: {}".format(firstbyte))
+
+        return result
+
+    def __setattr__(self, name, value):
+        raise NotImplementedError("Setting parameter is not (yet) implemented")
 
 
 class RS232Connection:
@@ -738,6 +784,40 @@ _crc16_tbl = [
     0x4E00, 0x8EC1, 0x8F81, 0x4F40, 0x8D01, 0x4DC0, 0x4C80, 0x8C41,
     0x4400, 0x84C1, 0x8581, 0x4540, 0x8701, 0x47C0, 0x4680, 0x8641,
     0x8201, 0x42C0, 0x4380, 0x8341, 0x4100, 0x81C1, 0x8081, 0x4040]
+
+
+communication_modes = {
+    0x00: 'AUTO',
+    0x01: 'RS232',
+    0x02: 'CAN',
+    0x03: 'Profibus DPV0',
+    0x04: 'RS232 Silent',
+}
+"""Available communication modes.
+
+See :attr:`Module.config`.
+
+"""
+
+unit_systems = {
+    0x00: '[mm]',
+    0x01: '[m]',
+    0x02: '[Inch]',
+    0x03: '[rad]',
+    0x04: '[Degree]',
+    0x05: '[Intern]',
+    0x06: '[μm] Integer',
+    0x07: '[μDegree] Integer',
+    0x08: '[μInch] Integer',
+    0x09: '[Milli − degree] Integer',
+}
+"""Available unit systems.
+
+See :attr:`Module.config`.
+
+.. note:: This Python module doesn't support integer unit systems.
+
+"""
 
 
 # Note: error in Schunk manual: key 0xE4 is not unique!
