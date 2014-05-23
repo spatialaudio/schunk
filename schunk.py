@@ -361,9 +361,11 @@ class Module:
 
         Returns
         -------
-        bytes
-            Command (1 byte), error code (1 byte), data (float).
-            The shown value can be interpreted by the SCHUNK Service.
+        command : {"ERROR", "WARNING", "INFO"}
+        error_code : int
+            See :const:`error_codes` for a mapping to strings.
+        data : bytes (float?)
+            The value can be interpreted by the Schunk Service.
 
         Raises
         ------
@@ -373,7 +375,9 @@ class Module:
             ``INFO FAILED (0x05)``.
 
         """
-        return self._send(0x96)
+        command, error_code, data = self._send(0x96, expected='BB4s')
+        command = {0x88: "ERROR", 0x89: "WARNING", 0x8A: "INFO"}[command]
+        return command, error_code, data
 
     def _send(self, command, data=b'', expected=None):
         """Send message, receive response.
