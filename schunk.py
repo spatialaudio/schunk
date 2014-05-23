@@ -549,6 +549,9 @@ class _Config:
         except KeyError:
             raise AttributeError("Invalid parameter: {}".format(name))
 
+        if cmd_byte is None:
+            raise AttributeError("{} is read-only".format(name))
+
         if format_string is not None:
             value = struct.pack('<' + format_string, value)
 
