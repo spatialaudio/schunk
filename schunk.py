@@ -320,14 +320,6 @@ class Module:
         """2.5.2 CMD REBOOT (0xE0)."""
         self._send(0xE0, expected=b'OK')
 
-    def ack(self):
-        """2.8.1.4 CMD ACK (0x8B).
-
-        Acknowledgement of a pending error message.
-
-        """
-        self._send(0x8B, expected=b'OK')
-
     def check_mc_pc_communication(self):
         """2.5.7 CHECK MC PC COMMUNICATION (0xE4).
 
@@ -355,6 +347,14 @@ class Module:
         data = struct.pack(_test_format_string, *_test_values)
         self._send(0xE5, data, b'OK\x00')
         return True
+
+    def ack(self):
+        """2.8.1.4 CMD ACK (0x8B).
+
+        Acknowledgement of a pending error message.
+
+        """
+        self._send(0x8B, expected=b'OK')
 
     def get_detailed_error_info(self):
         """2.8.1.5 GET DETAILED ERROR INFO (0x96).
