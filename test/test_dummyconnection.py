@@ -232,10 +232,11 @@ success_cases = {
 }
 
 
-@pytest.mark.parametrize("key", success_cases)
-def test_success(key):
-    method, args, kwargs, expected_bytes, answer_bytes, expected_result = \
-        success_cases[key]
+@pytest.mark.parametrize(
+    "method, args, kwargs, expected_bytes, answer_bytes, expected_result",
+    success_cases.values(), ids=list(success_cases))
+def test_success(
+        method, args, kwargs, expected_bytes, answer_bytes, expected_result):
     mod = schunk.Module(DummyConnection(expected_bytes, answer_bytes))
     result = getattr(mod, method)(*args, **kwargs)
     assert result == expected_result
@@ -251,9 +252,10 @@ set_config_success = {
 }
 
 
-@pytest.mark.parametrize("key", set_config_success)
-def test_set_config(key):
-    property, value, expected_bytes, answer_bytes = set_config_success[key]
+@pytest.mark.parametrize(
+    "property, value, expected_bytes, answer_bytes",
+    set_config_success.values(), ids=list(set_config_success))
+def test_set_config(property, value, expected_bytes, answer_bytes):
     mod = schunk.Module(DummyConnection(expected_bytes, answer_bytes))
     setattr(mod.config, property, value)
 
@@ -309,10 +311,10 @@ get_config_success = {
 }
 
 
-@pytest.mark.parametrize("key", get_config_success)
-def test_get_config(key):
-    property, expected_bytes, answer_bytes, expected_result = \
-        get_config_success[key]
+@pytest.mark.parametrize(
+    "property, expected_bytes, answer_bytes, expected_result",
+    get_config_success.values(), ids=list(get_config_success))
+def test_get_config(property, expected_bytes, answer_bytes, expected_result):
     mod = schunk.Module(DummyConnection(expected_bytes, answer_bytes))
     result = getattr(mod.config, property)
     assert result == expected_result
@@ -383,10 +385,11 @@ rs232_success_cases = {
 }
 
 
-@pytest.mark.parametrize("key", rs232_success_cases)
-def test_rs232_success(key):
-    method, args, kwargs, expected_bytes, answer_bytes, expected_result = \
-        rs232_success_cases[key]
+@pytest.mark.parametrize(
+    "method, args, kwargs, expected_bytes, answer_bytes, expected_result",
+    rs232_success_cases.values(), ids=list(rs232_success_cases))
+def test_rs232_success(
+        method, args, kwargs, expected_bytes, answer_bytes, expected_result):
     mod = schunk.Module(schunk.RS232Connection(
         # This is the module ID used in the examples of the Schunk nanual:
         0x01,
