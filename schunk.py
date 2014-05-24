@@ -230,6 +230,9 @@ class Module:
         stored in the EEPROM but are only applied after the module has
         been restarted.
 
+        Some options are read-only, some can only be set as "Profi"
+        user. See :meth:`change_user`.
+
         Attributes
         ----------
 
@@ -319,6 +322,31 @@ class Module:
     def reboot(self):
         """2.5.2 CMD REBOOT (0xE0)."""
         self._send(0xE0, expected=b'OK')
+
+    def change_user(self, password=None):
+        """2.5.6 CHANGE USER (0xE3).
+
+        If no password is specified - or if the password is wrong - the
+        user is changed to "User".
+        The default password for "Profi" is "Schunk", but don't tell
+        anyone!
+
+        After a reboot, the default user is "User".
+
+        """
+        if password is None:
+            data = b''
+        elif isinstance(password, str):
+            data = password.encode()
+        else:
+            data = password
+        ok, user = self._send(0xE3, data, '2sB')
+        if ok != b'OK':
+            raise SchunkError("Error changing user")
+        return {0x00: "User",
+                0x01: "Diag",
+                0x02: "Profi",
+                0x03: "Advanced"}[user]
 
     def check_mc_pc_communication(self):
         """2.5.7 CHECK MC PC COMMUNICATION (0xE4).

@@ -192,6 +192,22 @@ success_cases = {
         b'\x03\xE0OK',
         None),
 
+    # 2.5.6 CHANGE USER (0xE3)
+    'change_user_default': (
+        'change_user',
+        (),
+        {},
+        b'\x01\xE3',
+        b'\x04\xE3OK\x00',
+        "User"),
+    'change_user_profi': (
+        'change_user',
+        ("Schunk",),
+        {},
+        b'\x07\xE3Schunk',
+        b'\x04\xE3OK\x02',
+        "Profi"),
+
     # 2.5.7 CHECK MC PC COMMUNICATION (0xE4)
     'check_mc_pc_communication': (
         'check_mc_pc_communication',
