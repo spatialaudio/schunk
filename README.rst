@@ -48,6 +48,8 @@ py.test_ is used for the tests.
 Limitations
 -----------
 
+Only a subset of the Schunk Motion Protocol is supported.
+
 Only the direct response to a command can be obtained, *impulse messages* are
 not supported.
 
