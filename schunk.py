@@ -45,6 +45,8 @@ Example
 """
 
 import struct
+import contextlib
+import functools
 
 
 class Module:
@@ -62,9 +64,10 @@ class Module:
         Parameters
         ----------
         connection
-            Something that has a ``send()`` method. This method must
-            accept bytes, send them to a Schunk module, read the
-            response (taking D-Len into account) and return the response
+            Something that has an ``open()`` method which returns a
+            coroutine.  This coroutine must accept a bytes object and
+            send it to a Schunk module, read the response (taking D-Len
+            into account) and yield the response (and further messages)
             as a bytes object.
 
             :class:`RS232Connection` happens to do exactly that.
@@ -101,12 +104,36 @@ class Module:
 
         See Also
         --------
-        move_pos_rel
+        move_pos_blocking, move_pos_rel
         set_target_vel, set_target_acc, set_target_cur, set_target_jerk
 
         """
         return self._move_pos_helper(0xB0, position, velocity,
                                      acceleration, current, jerk)
+
+    def move_pos_blocking(self, position, velocity=None, acceleration=None,
+                          current=None, jerk=None):
+        """Move to position and wait until position is reached.
+
+        .. note:: *Impulse messages* must be activated for this to work,
+                  see :meth:`toggle_impulse_message` and
+                  :attr:`communication_mode`.
+
+                  This applies to all ``*_blocking()`` methods.
+
+        Returns
+        -------
+        float
+            The final position.
+
+        See Also
+        --------
+        move_pos
+
+        """
+        return self._move_pos_helper(0xB0, position, velocity,
+                                     acceleration, current, jerk,
+                                     blocking=True)
 
     def move_pos_rel(self, position, velocity=None, acceleration=None,
                      current=None, jerk=None):
@@ -128,12 +155,30 @@ class Module:
 
         See Also
         --------
-        move_pos
+        move_pos_rel_blocking, move_pos
         set_target_vel, set_target_acc, set_target_cur, set_target_jerk
 
         """
         return self._move_pos_helper(0xB8, position, velocity,
                                      acceleration, current, jerk)
+
+    def move_pos_rel_blocking(self, position, velocity=None, acceleration=None,
+                              current=None, jerk=None):
+        """Move to relative position and wait until position is reached.
+
+        Returns
+        -------
+        float
+            The actual relative motion.
+
+        See Also
+        --------
+        move_pos_rel
+
+        """
+        return self._move_pos_helper(0xB8, position, velocity,
+                                     acceleration, current, jerk,
+                                     blocking=True)
 
     def move_pos_time(self, position, velocity=None, acceleration=None,
                       current=None, time=None):
@@ -141,11 +186,29 @@ class Module:
 
         See Also
         --------
-        move_pos, set_target_time
+        move_pos_time_blocking, move_pos, set_target_time
 
         """
         return self._move_pos_helper(0xB1, position, velocity,
                                      acceleration, current, time)
+
+    def move_pos_time_blocking(self, position, velocity=None,
+                               acceleration=None, current=None, time=None):
+        """Move to position and wait until position is reached.
+
+        Returns
+        -------
+        float
+            The final position.
+
+        See Also
+        --------
+        move_pos_time
+
+        """
+        return self._move_pos_helper(0xB1, position, velocity,
+                                     acceleration, current, time,
+                                     blocking=True)
 
     def move_pos_time_rel(self, position, velocity=None, acceleration=None,
                           current=None, time=None):
@@ -153,11 +216,29 @@ class Module:
 
         See Also
         --------
-        move_pos_rel, set_target_time
+        move_pos_time_rel_blocking, move_pos_rel, set_target_time
 
         """
         return self._move_pos_helper(0xB9, position, velocity,
                                      acceleration, current, time)
+
+    def move_pos_time_rel_blocking(self, position, velocity=None,
+                                   acceleration=None, current=None, time=None):
+        """Move to position and wait until position is reached.
+
+        Returns
+        -------
+        float
+            The actual relative motion.
+
+        See Also
+        --------
+        move_pos_time_rel
+
+        """
+        return self._move_pos_helper(0xB9, position, velocity,
+                                     acceleration, current, time,
+                                     blocking=True)
 
     def set_target_vel(self, velocity):
         """2.1.14 SET TARGET VEL (0xA0).
@@ -204,6 +285,9 @@ class Module:
 
     def toggle_impulse_message(self):
         """2.2.6 CMD TOGGLE IMPULSE MESSAGE (0xE7).
+
+        .. note:: *Impulse messages* must be switched on for
+                  ``*_blocking()``, e.g. :meth:`move_pos_blocking`.
 
         Returns
         -------
@@ -419,61 +503,29 @@ class Module:
         is raised.
 
         """
+        with contextlib.closing(self._gen_send(command, data)) as gen:
+            return _check_response(next(gen), command, expected)
+
+    def _gen_send(self, command, data=b''):
+        """Send data and return a generator."""
         data = struct.pack('B', command) + data  # prepend command code
         data = struct.pack('B', len(data)) + data  # prepend dlen
-        response = self._connection.send(data)
+        with contextlib.closing(self._connection.open()) as gen:
+            yield gen.send(data)
+            yield from gen
 
-        if len(response) < 2:
-            raise SchunkError("Not enough data in response")
-        dlen, cmd_code = response[:2]
-        if dlen != len(response) - 1:
-            raise SchunkError("D-Len mismatch in response")
-        if dlen == 2:
-            error = response[2]
-            error_prefix = {
-                0x88: "CMD ERROR: ",
-                0x89: "CMD WARNING: ",
-                0x8A: "CMD INFO: ",
-                command: "",
-            }.get(cmd_code, "Command code 0x{:02X}: ".format(cmd_code))
-            error_string = "{} (0x{:02X})".format(
-                error_codes.get(error, "UNKNOWN"), error)
-            raise SchunkError(error_prefix + error_string)
+    def _move_pos_helper(self, command, *args, blocking=False):
+        """Move to the given position.
 
-        if cmd_code != command:
-            raise SchunkError(
-                "Unexpected command code in response: {}".format(hex(command)))
-        response = response[2:]  # remove D-Len and command code
-
-        if isinstance(expected, bytes):
-            if response == expected:
-                return
-            else:
-                err = "Unexpected response: {} instead of {}"
-                raise SchunkError(err.format(response, expected))
-
-        format_string = None
-        if isinstance(expected, str):
-            format_string = expected
-            expected = struct.calcsize(format_string)
-
-        if expected is not None:
-            if len(response) != expected:
-                err = "Unexpected payload size in reponse: {} instead of {}"
-                raise SchunkError(err.format(len(response), expected))
-
-        if format_string is not None:
-            response = struct.unpack(format_string, response)
-
-        return response
-
-    def _move_pos_helper(self, code, *args):
-        """Start moving to the given position and return estimated time.
-
+        If blocking=False, the movement is started and the estimated
+        time is immediately returned.
         If the time cannot be estimated, 0.0 is returned.
+        If blocking=True, the final position (or the actual relative
+        movement) is returned when the movement is finished.
 
-        Use code=0xB0 for absolute and code=0xB8 for relative positions.
-        For the "time" variants, use code=0xB1 and code=0xB9, resp.
+        Use command=0xB0 for absolute and command=0xB8 for relative
+        positions.  For the "time" variants, use command=0xB1 and
+        command=0xB9, respectively.
 
         Trailing None arguments are removed, None arguments between
         other arguments are not allowed.
@@ -486,16 +538,68 @@ class Module:
 
         data = struct.pack('<{}f'.format(n), *args[:n])
 
-        response = self._send(code, data)
+        with contextlib.closing(self._gen_send(command, data)) as gen:
+            response = _check_response(next(gen), command)
+            if response == b'OK':
+                est_time = 0.0
+            elif len(response) == 4:
+                est_time, = struct.unpack('<f', response)
+            else:
+                raise SchunkError("Unexpected reponse: {}".format(response))
 
-        if response == b'OK':
-            est_time = 0.0
-        elif len(response) == 4:
-            est_time, = struct.unpack('<f', response)
+            if not blocking:
+                return est_time
+            else:
+                # 2.2.3 CMD POS REACHED (0x94)
+                position, = _check_response(next(gen), 0x94, '<f')
+                return position
+
+
+def _check_response(response, command, expected=None):
+    """Check if the response has the correct format."""
+    if len(response) < 2:
+        raise SchunkError("Not enough data in response")
+    dlen, cmd_code = response[:2]
+    if dlen != len(response) - 1:
+        raise SchunkError("D-Len mismatch in response")
+    if dlen == 2:
+        error = response[2]
+        error_prefix = {
+            0x88: "CMD ERROR: ",
+            0x89: "CMD WARNING: ",
+            0x8A: "CMD INFO: ",
+            command: "",
+        }.get(cmd_code, "Command code 0x{:02X}: ".format(cmd_code))
+        error_string = "{} (0x{:02X})".format(
+            error_codes.get(error, "UNKNOWN"), error)
+        raise SchunkError(error_prefix + error_string)
+
+    if cmd_code != command:
+        raise SchunkError(
+            "Unexpected command code in response: {}".format(hex(cmd_code)))
+    response = response[2:]  # remove D-Len and command code
+
+    if isinstance(expected, bytes):
+        if response == expected:
+            return
         else:
-            raise SchunkError("Unexpected reponse: {}".format(response))
+            err = "Unexpected response: {} instead of {}"
+            raise SchunkError(err.format(response, expected))
 
-        return est_time
+    format_string = None
+    if isinstance(expected, str):
+        format_string = expected
+        expected = struct.calcsize(format_string)
+
+    if expected is not None:
+        if len(response) != expected:
+            err = "Unexpected payload size in reponse: {} instead of {}"
+            raise SchunkError(err.format(len(response), expected))
+
+    if format_string is not None:
+        response = struct.unpack(format_string, response)
+
+    return response
 
 
 class SchunkError(Exception):
@@ -592,6 +696,16 @@ class _Config:
             raise SchunkError("Error setting {}".format(name))
 
 
+def coroutine(func):
+    """Decorator for generator functions that calls next() initially."""
+    @functools.wraps(func)
+    def start(*args, **kwargs):
+        gen = func(*args, **kwargs)
+        next(gen)
+        return gen
+    return start
+
+
 class RS232Connection:
 
     """A serial connection using RS232.
@@ -605,7 +719,7 @@ class RS232Connection:
 
         This can be used to initialize a :class:`Module`.
 
-        The connection is opened and closed on each :meth:`send`.
+        The connection is opened with :meth:`open`.
 
         Parameters
         ----------
@@ -615,7 +729,8 @@ class RS232Connection:
         serialmanager
             A callable (to be called with ``*args`` and ``**kwargs``)
             that must return a context manager which in turn must have
-            ``read()`` and ``write()`` methods.
+            ``read()`` and ``write()`` methods (and it should close the
+            connection automatically in the end).
 
             This is typically ``serial.Serial`` from PySerial_, but
             anything with a similar API can be used.
@@ -625,6 +740,11 @@ class RS232Connection:
             .. note:: there should be a timeout, otherwise you may have
                       to wait forever for the functions to return if
                       there is an error.
+                      On the other hand, receiving multiple responses
+                      only works if there is no timeout in between.
+                      Multiple responses are needed for the blocking
+                      movement commands, e.g.
+                      :meth:`Module.move_pos_blocking`.
 
         *args, **kwargs
             All further arguments are forwarded to `serialmanager`.
@@ -648,74 +768,95 @@ class RS232Connection:
         self._serial_args = args
         self._serial_kwargs = kwargs
 
-    def send(self, data):
-        """Send and receive data via an RS232 connection.
+    @coroutine
+    def open(self):
+        """Open an RS232 connection.
 
-        Adds 2 Group/ID bytes in the beginning and 2 CRC bytes in the
-        end.  The first byte is always 0x05 (= message from master to
-        module), the second byte holds the module ID.
+        A coroutine (a.k.a. generator object) is returned which can be
+        used to send and receive one or more data frames.
 
-        The connection is opened, the RS232 frame is sent to the module,
-        a response is received and the connection is closed again.
-        The 2 CRC bytes are checked (and removed), as well as the 2
-        Group/ID bytes.
-        If the first byte indicates an error (0x03), the response is
-        returned normally and the error has to be handled in the calling
-        function. Error responses always have a D-Len of 2, i.e. they
-        have 3 bytes: D-Len, command code and error code.
+        Calling ``.send(data)`` on this coroutine creates an RS232 frame
+        around `data`, sends it to the module and waits for a response.
 
-        Parameters
-        ----------
-        data : bytes
-            Data to send. First byte: D-Len, second byte: command code.
-            The (optional) rest are parameters.
+        `data` must have at least two bytes, D-Len and command code.
+        The (optional) rest are parameters.
+        2 Group/ID bytes are added in the beginning and 2 CRC bytes in
+        the end.  The first byte is always 0x05 (= message from master
+        to module), the second byte holds the module ID.
 
-        Returns
-        -------
+        When receiving a response, the 2 CRC bytes are checked (and
+        removed), as well as the 2 Group/ID bytes.
+
+        The connection is kept open and the coroutine can be invoked
+        repeatedly to receive further data frames.
+        Use ``.send(None)`` or the built-in ``next()`` function to
+        receive a data frame without sending anything.
+
+        When the desired number of frames has been received, the
+        connection has to be closed with the generator's ``close()``
+        method.
+
+        Yields
+        ------
         bytes
             Response data received from the module, including D-Len and
             command code.
+
+            If the first RS232 byte indicates an error (0x03), the
+            response is returned normally and the error has to be
+            handled in the calling function. Error responses always have
+            a D-Len of 2, i.e. they have 3 bytes: D-Len, command code
+            and error code.
 
         See Also
         --------
         crc16
 
         """
-        data = struct.pack('BB', 0x05, self._id) + data
-        data += crc16(data)
+        response = None
         with self._serialmanager(*self._serial_args,
                                  **self._serial_kwargs) as serial:
-            if serial.write(data) != len(data):
-                raise SchunkRS232Error("Error sending data")
-            header = serial.read(3)
-            if len(header) < 3:
-                raise SchunkRS232Error("Error reading header")
 
-            msg_type, module_id, dlen = header
-            if module_id != self._id:
-                raise SchunkRS232Error("Module ID mismatch")
-            elif msg_type not in (0x03, 0x07):
-                raise SchunkRS232Error("Unexpected message type in response: "
-                                       "0x{:02X}".format(msg_type))
-            crclen = 2
-            the_rest = serial.read(dlen + crclen)
+            while True:
+                next_msg = yield response
 
-        if len(the_rest) < dlen + crclen:
-            raise SchunkRS232Error("Not enough data in response")
+                if next_msg is not None:
+                    next_msg = struct.pack('BB', 0x05, self._id) + next_msg
+                    next_msg += crc16(next_msg)
+                    if serial.write(next_msg) != len(next_msg):
+                        raise SchunkRS232Error("Error sending data")
 
-        crc = the_rest[-crclen:]
-        the_rest = the_rest[:-crclen]
-        if crc != crc16(header + the_rest):
-            raise SchunkRS232Error("CRC error in response")
+                header = serial.read(3)
+                if len(header) < 3:
+                    raise SchunkRS232Error("Error reading response")
 
-        if msg_type == 0x03 and dlen != 2:
-            # This should never happen, but who knows ...
-            raise SchunkRS232Error(
-                "Message type 0x03, D-Len {}, data: {}".format(dlen, the_rest))
+                msg_type, module_id, dlen = header
+                if module_id != self._id:
+                    raise SchunkRS232Error("Module ID mismatch")
+                elif msg_type not in (0x03, 0x07):
+                    raise SchunkRS232Error(
+                        "Unexpected message type in response: "
+                        "0x{:02X}".format(msg_type))
+                crclen = 2
+                the_rest = serial.read(dlen + crclen)
 
-        # Note: error checking (if dlen == 2) is done in _send()
+                if len(the_rest) < dlen + crclen:
+                    raise SchunkRS232Error("Not enough data in response")
 
-        return struct.pack('B', dlen) + the_rest
+                crc = the_rest[-crclen:]
+                the_rest = the_rest[:-crclen]
+                if crc != crc16(header + the_rest):
+                    raise SchunkRS232Error("CRC error in response")
+
+                if msg_type == 0x03 and dlen != 2:
+                    # This should never happen, but who knows ...
+                    raise SchunkRS232Error(
+                        "Message type 0x03, D-Len {}, data: {}".format(
+                            dlen, the_rest))
+
+                # Note: error checking (if dlen == 2) is not done here
+
+                response = struct.pack('B', dlen) + the_rest
 
 
 class SchunkRS232Error(SchunkError):

@@ -9,9 +9,16 @@ class DummyConnection:
         self._expected = expected
         self._answer = answer
 
-    def send(self, data):
+    @schunk.coroutine
+    def open(self):
+        data = yield
         assert data == self._expected
-        return self._answer
+        if isinstance(self._answer, bytes):
+            yield self._answer
+        else:
+            yield from self._answer
+        # The generator must be closed before reaching this:
+        raise RuntimeError("Too many calls to the generator!")
 
 
 success_cases = {
@@ -35,6 +42,14 @@ success_cases = {
     # TODO: check return b'OK'
     # TODO: check further arguments
 
+    'move_pos_blocking': (
+        'move_pos_blocking',
+        (10.0,),
+        {},
+        b'\x05\xB0\x00\x00\x20\x41',
+        (b'\x05\xB0\xCD\xCC\x04\x41', b'\x05\x94\x00\x00\x20\x41'),
+        10.0),
+
     # 2.1.4 MOVE POS REL (0xB8)
     'move_pos_rel': (
         'move_pos_rel',
@@ -45,6 +60,14 @@ success_cases = {
         8.300000190734863),
     # TODO: see move_pos, is repetition necessary?
 
+    'move_pos_rel_blocking': (
+        'move_pos_rel_blocking',
+        (10.0,),
+        {},
+        b'\x05\xB8\x00\x00\x20\x41',
+        (b'\x05\xB8\xCD\xCC\x04\x41', b'\x05\x94\x00\x00\x20\x41'),
+        10.0),
+
     # 2.1.5 MOVE POS TIME (0xB1)
     'move_pos_time': (
         'move_pos_time',
@@ -54,6 +77,14 @@ success_cases = {
         b'\x05\xB1\x00\x00\xA0\x40',
         5.0),
 
+    'move_pos_time_blocking': (
+        'move_pos_time_blocking',
+        (10.0,),
+        {},
+        b'\x05\xB1\x00\x00\x20\x41',
+        (b'\x05\xB1\x00\x00\xA0\x40', b'\05\x94\x00\x00\x20\x41'),
+        10.0),
+
     # 2.1.6 MOVE POS TIME REL (0xB9)
     'move_pos_time_rel': (
         'move_pos_time_rel',
@@ -62,6 +93,14 @@ success_cases = {
         b'\x05\xB9\x00\x00\x20\x41',
         b'\x05\xB9\x00\x00\xA0\x40',
         5.0),
+
+    'move_pos_time_rel_blocking': (
+        'move_pos_time_rel_blocking',
+        (10.0,),
+        {},
+        b'\x05\xB9\x00\x00\x20\x41',
+        (b'\x05\xB9\x00\x00\xA0\x40', b'\05\x94\x00\x00\x20\x41'),
+        10.0),
 
     # 2.1.14 SET TARGET VEL (0xA0)
     'set_target_vel': (
@@ -347,6 +386,7 @@ class DummySerialManager:
         return self
 
     def __exit__(self, *args):
+        # TODO: somehow check if connection was closed in the end?
         pass
 
     def write(self, data):

@@ -52,6 +52,9 @@ Only a subset of the Schunk Motion Protocol is supported.
 
 Only the direct response to a command can be obtained, *impulse messages* are
 not supported.
+One exception is the "CMD POS REACHED" impulse message which is used to realize
+movement commands which are waiting until the movement is finished, e.g.
+``move_pos_blocking()``.
 
 Only floating point unit systems are supported.
 
@@ -104,8 +107,11 @@ serial port options.
 You probably only have to change ``port``, e.g. ``port='/dev/ttyS1'`` or
 ``port='COM3'``.
 
-It is very important that you specify a *timeout*, otherwise you may have to
-wait forever for the functions to return if there is an error.
+It is useful to specify a *timeout*, otherwise you may have to wait forever for
+the functions to return if there is an error.
+On the other hand, if you want to use the blocking commands (``*_blocking()``),
+you should disable the timeout (or make it longer than the expected movement
+times).
 
 If the parameters for your setup don't change, you can write them into a
 separate file, e.g. with the name ``myschunk.py``::
