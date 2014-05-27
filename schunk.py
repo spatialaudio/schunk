@@ -441,10 +441,9 @@ class Module:
             ``True`` on success.
 
         """
-        returned = self._send(0xE4, expected=_test_format_string)
-        for ret, val in zip(returned, _test_values):
-            if abs(ret - val) > 0.000001:
-                raise SchunkError("Wrong result for {}: {}".format(val, ret))
+        response = self._send(0xE4, expected=_test_format_string)
+        if response != _test_values:
+            raise SchunkError("Wrong response: {}".format(response))
         return True
 
     def check_pc_mc_communication(self):
@@ -1080,5 +1079,9 @@ See also :meth:`Module.get_state`.
 
 """
 
-_test_values = (-1.2345, 47.11, 287454020, -1122868, 512, -20482)
+# The Schunk people chose -1.2345 and 47.11 as test values which is
+# unfortunate, because they cannot be represented exactly as binary floating
+# point numbers.
+_test_values = ( -1.2345000505447388, 47.11000061035156, 287454020, -1122868,
+                512, -20482)
 _test_format_string = '<2f2i2h'
