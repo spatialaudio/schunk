@@ -476,7 +476,7 @@ class Module:
         command : {"ERROR", "WARNING", "INFO"}
         error_code : int
             See :const:`error_codes` for a mapping to strings.
-        data : bytes (float?)
+        data : float
             The value can be interpreted by the Schunk Service.
 
         Raises
@@ -487,7 +487,7 @@ class Module:
             ``INFO FAILED (0x05)``.
 
         """
-        command, error_code, data = self._send(0x96, expected='BB4s')
+        command, error_code, data = self._send(0x96, expected='<BBf')
         command = {0x88: "ERROR", 0x89: "WARNING", 0x8A: "INFO"}[command]
         return command, error_code, data
 

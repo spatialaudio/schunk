@@ -283,7 +283,7 @@ success_cases = {
         {},
         b'\x01\x96',
         b'\x07\x96\x88\xD9\x00\x00\x00\x00',
-        ("ERROR", 0xD9, b'\x00\x00\x00\x00')),
+        ("ERROR", 0xD9, 0.0)),
 }
 
 
