@@ -18,7 +18,7 @@ class PyTest(TestCommand):
 
 setup(
     name="SchunkMotionProtocol",
-    version="0.0",
+    version="0.1",
     packages=find_packages(),
 
     author="Matthias Geier",
@@ -26,7 +26,7 @@ setup(
     description="Schunk Motion Protocol for Python 3",
     license="MIT",
     keywords="Schunk RS232 servo motor".split(),
-    url="http://github.com/spatialaudio/schunk",
+    url="http://schunk.rtfd.org/",
 
     tests_require=['pytest'],
     cmdclass={'test': PyTest},
