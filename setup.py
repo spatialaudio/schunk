@@ -19,7 +19,7 @@ class PyTest(TestCommand):
 setup(
     name="SchunkMotionProtocol",
     version="0.1",
-    packages=find_packages(),
+    py_modules=['schunk'],
 
     author="Matthias Geier",
     author_email="Matthias.Geier@gmail.com",
