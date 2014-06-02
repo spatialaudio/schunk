@@ -66,19 +66,36 @@ Only the RS232 protocol is implemented.
 Installation
 ------------
 
-::
+Using `pip <http://www.pip-installer.org/en/latest/installing.html>`_, you can
+download and install the latest release with a single command::
 
+    pip3 install SchunkMotionProtocol
+
+If you prefer, you can also download the package from
+`PyPI <https://pypi.python.org/pypi/SchunkMotionProtocol/>`_, extract it, change
+to the main directory and install it using ::
+
+    python3 setup.py install
+
+If you want to get the newest development version from
+`Github <http://github.com/spatialaudio/schunk/>`_::
+
+    git clone https://github.com/spatialaudio/schunk.git
+    cd schunk
     python3 setup.py install
 
 Alternatively, you can just copy ``schunk.py`` to your working directory.
 
-If you want to make changes to ``schunk.py``, you should type::
+If you want to make changes to the code, you should type::
 
     python3 setup.py develop
 
 or, alternatively::
 
     pip3 install -e .
+
+If you have only Python 3 installed on your system, you probably have to use
+``pip``/``python`` without the version number.
 
 Tests
 -----
