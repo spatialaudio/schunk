@@ -69,33 +69,45 @@ Installation
 Using `pip <http://www.pip-installer.org/en/latest/installing.html>`_, you can
 download and install the latest release with a single command::
 
-    pip3 install SchunkMotionProtocol
+    pip3 install --user SchunkMotionProtocol
+
+If you want to install it system-wide for all users (assuming you have the
+necessary rights), you can just drop the ``--user`` option.
+
+If you have only Python 3 installed on your system, you probably have to use
+``pip`` instead of ``pip3``.
+
+To un-install, use::
+
+    pip3 uninstall SchunkMotionProtocol
 
 If you prefer, you can also download the package from
 `PyPI <https://pypi.python.org/pypi/SchunkMotionProtocol/>`_, extract it, change
-to the main directory and install it using ::
+to the main directory and install it using::
 
-    python3 setup.py install
+    python3 setup.py install --user
+
+If you have only Python 3 installed on your system, you probably have to use
+``python`` instead of ``python3``.
 
 If you want to get the newest development version from
 `Github <http://github.com/spatialaudio/schunk/>`_::
 
     git clone https://github.com/spatialaudio/schunk.git
     cd schunk
-    python3 setup.py install
+    python3 setup.py install --user
 
 Alternatively, you can just copy ``schunk.py`` to your working directory.
 
 If you want to make changes to the code, you should type::
 
-    python3 setup.py develop
+    python3 setup.py develop --user
 
 or, alternatively::
 
-    pip3 install -e .
+    pip3 install --user -e .
 
-If you have only Python 3 installed on your system, you probably have to use
-``pip``/``python`` without the version number.
+... where ``-e`` stands for ``--editable``.
 
 Tests
 -----
