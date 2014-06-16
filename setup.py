@@ -1,6 +1,7 @@
 import sys
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
+import pkg_resources
 
 
 class PyTest(TestCommand):
@@ -18,7 +19,7 @@ class PyTest(TestCommand):
 
 setup(
     name="SchunkMotionProtocol",
-    version="0.1.1",
+    version=pkg_resources.require("SchunkMotionProtocol")[0].version,
     py_modules=['schunk'],
 
     author="Matthias Geier",
