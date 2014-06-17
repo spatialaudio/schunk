@@ -635,14 +635,15 @@ class _Config:
         'gear_ratio':         (b'\x18', 'f'),
         'eeprom':             (b'\xFE', None),
 
-        'module_type':        (None, '8s4x2x2x2x26x'),
+        'module_type':        (None, '8s4x2x2x2x21x5x'),
         # 'order_number' is already available
-        'firmware_version':   (None, '8x4xH2x2x26x'),
-        'protocol_version':   (None, '8x4x2xH2x26x'),
-        'hardware_version':   (None, '8x4x2x2xH26x'),
-        # Note: the Schunk manual states that the date string has 21 bytes,
-        # the PR-70 modules returns 5 more bytes, however:
-        'firmware_date':      (None, '8x4x2x2x2x26s'),
+        'firmware_version':   (None, '8x4xH2x2x21x5x'),
+        'protocol_version':   (None, '8x4x2xH2x21x5x'),
+        'hardware_version':   (None, '8x4x2x2xH21x5x'),
+        'firmware_date':      (None, '8x4x2x2x2x21s5x'),
+        # Note: There are 5 more bytes which the Schunk manual doesn't mention.
+        # The meaning of these mysterious bytes is not known.
+        '_internal':          (None, '8x4x2x2x2x21x5s'),
     }
 
     def __init__(self, module):
@@ -1057,7 +1058,7 @@ error_codes = {
     0xEC: "ERROR MATH",
     0xDB: "ERROR VPC3",
     0xDC: "ERROR FRAGMENTATION",
-    0xE4: "ERROR COMMUTATION",
+    0xDD: "ERROR COMMUTATION",
     0xDE: "ERROR CURRENT",
     0xDF: "ERROR I2T",
     0xE0: "ERROR INITIALIZE",
@@ -1076,8 +1077,6 @@ error_codes = {
 """Error codes.
 
 See also :meth:`Module.get_state`.
-
-.. note:: Error in Schunk manual: key 0xE4 (= 228) is not unique!
 
 """
 

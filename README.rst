@@ -10,6 +10,11 @@ Code:
 Schunk Motion Protocol manual:
   http://www.schunk.com/schunk_files/attachments/MotionControl_en_2010-03.pdf
 
+  A newer version of the manual is available `in a huge zip file from the Schunk
+  website`__ (have a look in the directory :file:`Manuals/Motion Control/`)
+
+__ http://www.schunk.com/schunk_files/attachments/MTS_v_1_56_20130904.zip
+
 Disclaimer
 ----------
 
@@ -30,6 +35,8 @@ __ http://tinyurl.com/schunk-pr/
 Defaults for this device: RS232, baudrate=9600, module ID 11 (0x0B).
 
 Other devices may or may not work.
+
+Only firmware version 1.56 was tested, other versions may or may not work.
 
 Requirements
 ------------
