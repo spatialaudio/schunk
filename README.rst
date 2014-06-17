@@ -11,7 +11,7 @@ Schunk Motion Protocol manual:
   http://www.schunk.com/schunk_files/attachments/MotionControl_en_2010-03.pdf
 
   A newer version of the manual is available `in a huge zip file from the Schunk
-  website`__ (have a look in the directory :file:`Manuals/Motion Control/`)
+  website`__ (have a look in the directory ``Manuals/Motion Control/``)
 
 __ http://www.schunk.com/schunk_files/attachments/MTS_v_1_56_20130904.zip
 
