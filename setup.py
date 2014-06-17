@@ -26,7 +26,7 @@ setup(
     description="Schunk Motion Protocol for Python 3",
     long_description=open('README.rst').read(),
     license="MIT",
-    keywords="Schunk RS232 servo motor".split(),
+    keywords="Schunk serial servo motor".split(),
     url="http://schunk.rtfd.org/",
     download_url="https://github.com/spatialaudio/schunk/releases/",
     platforms='any',

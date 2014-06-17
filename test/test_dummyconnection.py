@@ -407,7 +407,7 @@ class DummySerialManager:
         return result
 
 
-rs232_success_cases = {
+serial_success_cases = {
     # 6.1.1.1 Referencing
     'reference': (
         'reference',
@@ -450,10 +450,10 @@ rs232_success_cases = {
 
 @pytest.mark.parametrize(
     "method, args, kwargs, expected_bytes, answer_bytes, expected_result",
-    rs232_success_cases.values(), ids=list(rs232_success_cases))
-def test_rs232_success(
+    serial_success_cases.values(), ids=list(serial_success_cases))
+def test_serial_success(
         method, args, kwargs, expected_bytes, answer_bytes, expected_result):
-    mod = schunk.Module(schunk.RS232Connection(
+    mod = schunk.Module(schunk.SerialConnection(
         # This is the module ID used in the examples of the Schunk nanual:
         0x01,
         DummySerialManager,

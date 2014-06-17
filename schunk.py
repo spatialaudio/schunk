@@ -37,7 +37,7 @@ Example
     import schunk
     import serial
 
-    mod = schunk.Module(schunk.RS232Connection(
+    mod = schunk.Module(schunk.SerialConnection(
         0x0B, serial.Serial, port=0, baudrate=9600, timeout=1))
 
     mod.move_pos(42)
@@ -72,7 +72,7 @@ class Module:
             into account) and yield the response (and further messages)
             as a bytes object.
 
-            :class:`RS232Connection` happens to do exactly that.
+            :class:`SerialConnection` happens to do exactly that.
 
         """
         self._connection = connection
@@ -340,7 +340,7 @@ class Module:
 
         module_id : int (1..255)
         group_id : int (1..255)
-        rs232_baudrate : int (1200, 2400, 4800, 9600, 19200, 38400)
+        serial_baudrate : int (1200, 2400, 4800, 9600, 19200, 38400)
         can_baudrate : int (50, 100, 125, 250, 500, 800, 1000)
 
         communication_mode : int
@@ -615,7 +615,7 @@ class _Config:
     _params = {
         'module_id':          (b'\x01', 'B'),
         'group_id':           (b'\x02', 'B'),
-        'rs232_baudrate':     (b'\x03', 'H'),
+        'serial_baudrate':    (b'\x03', 'H'),
         'can_baudrate':       (b'\x04', 'H'),
         'communication_mode': (b'\x05', 'B'),
         'unit_system':        (b'\x06', 'B'),
@@ -708,16 +708,16 @@ def coroutine(func):
     return start
 
 
-class RS232Connection:
+class SerialConnection:
 
-    """A serial connection using RS232.
+    """A serial connection.
 
     For further documentation see the __init__() docstring.
 
     """
 
     def __init__(self, id, serialmanager, *args, **kwargs):
-        """Prepare a serial connection using the RS232 protocol.
+        """Prepare a serial connection.
 
         This can be used to initialize a :class:`Module`.
 
@@ -761,8 +761,8 @@ class RS232Connection:
         Using PySerial_:
 
         >>> import serial
-        >>> conn = RS232Connection(0x0B, serial.Serial, port=0,
-        ...                        baudrate=9600, timeout=1)
+        >>> conn = SerialConnection(0x0B, serial.Serial, port=0,
+        ...                         baudrate=9600, timeout=1)
 
         """
         self._id = id
@@ -772,12 +772,12 @@ class RS232Connection:
 
     @coroutine
     def open(self):
-        """Open an RS232 connection.
+        """Open a serial connection.
 
         A coroutine (a.k.a. generator object) is returned which can be
         used to send and receive one or more data frames.
 
-        Calling ``.send(data)`` on this coroutine creates an RS232 frame
+        Calling ``.send(data)`` on this coroutine creates a serial frame
         around `data`, sends it to the module and waits for a response.
 
         `data` must have at least two bytes, D-Len and command code.
@@ -804,7 +804,7 @@ class RS232Connection:
             Response data received from the module, including D-Len and
             command code.
 
-            If the first RS232 byte indicates an error (0x03), the
+            If the first byte indicates an error (0x03), the
             response is returned normally and the error has to be
             handled in the calling function. Error responses always have
             a D-Len of 2, i.e. they have 3 bytes: D-Len, command code
@@ -826,33 +826,33 @@ class RS232Connection:
                     next_msg = struct.pack('BB', 0x05, self._id) + next_msg
                     next_msg += crc16(next_msg)
                     if serial.write(next_msg) != len(next_msg):
-                        raise SchunkRS232Error("Error sending data")
+                        raise SchunkSerialError("Error sending data")
 
                 header = serial.read(3)
                 if len(header) < 3:
-                    raise SchunkRS232Error("Error reading response")
+                    raise SchunkSerialError("Error reading response")
 
                 msg_type, module_id, dlen = header
                 if module_id != self._id:
-                    raise SchunkRS232Error("Module ID mismatch")
+                    raise SchunkSerialError("Module ID mismatch")
                 elif msg_type not in (0x03, 0x07):
-                    raise SchunkRS232Error(
+                    raise SchunkSerialError(
                         "Unexpected message type in response: "
                         "0x{:02X}".format(msg_type))
                 crclen = 2
                 the_rest = serial.read(dlen + crclen)
 
                 if len(the_rest) < dlen + crclen:
-                    raise SchunkRS232Error("Not enough data in response")
+                    raise SchunkSerialError("Not enough data in response")
 
                 crc = the_rest[-crclen:]
                 the_rest = the_rest[:-crclen]
                 if crc != crc16(header + the_rest):
-                    raise SchunkRS232Error("CRC error in response")
+                    raise SchunkSerialError("CRC error in response")
 
                 if msg_type == 0x03 and dlen != 2:
                     # This should never happen, but who knows ...
-                    raise SchunkRS232Error(
+                    raise SchunkSerialError(
                         "Message type 0x03, D-Len {}, data: {}".format(
                             dlen, the_rest))
 
@@ -861,15 +861,15 @@ class RS232Connection:
                 response = struct.pack('B', dlen) + the_rest
 
 
-class SchunkRS232Error(SchunkError):
-    """Exception class for errors related to RS232 connections.
+class SchunkSerialError(SchunkError):
+    """Exception class for errors related to serial connections.
 
     It is derived from :exc:`SchunkError`, so it is normally
     sufficient to check only for this::
 
         try:
             ...
-            # Something that may throw SchunkError or SchunkRS232Error
+            # Something that may throw SchunkError or SchunkSerialError
             ...
         except SchunkError as e:
             # Do something with e
@@ -990,10 +990,10 @@ _crc16_tbl = [
 
 communication_modes = {
     0x00: 'AUTO',
-    0x01: 'RS232',
+    0x01: 'serial',
     0x02: 'CAN',
     0x03: 'Profibus DPV0',
-    0x04: 'RS232 Silent',
+    0x04: 'serial silent',
 }
 """Available communication modes.
 

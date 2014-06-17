@@ -32,7 +32,7 @@ Only 1 device was tested: `Schunk PR-70 Servo Electric Swivel Unit`__.
 
 __ http://tinyurl.com/schunk-pr/
 
-Defaults for this device: RS232, baudrate=9600, module ID 11 (0x0B).
+Defaults for this device: serial (RS232), baudrate=9600, module ID 11 (0x0B).
 
 Other devices may or may not work.
 
@@ -68,7 +68,7 @@ Only floating point unit systems are supported.
 The connection is opened and closed for each message.
 Keeping the connection open is not supported.
 
-Only the RS232 protocol is implemented.
+Only serial communication is implemented. No CAN, no Profibus.
 
 Installation
 ------------
@@ -131,7 +131,7 @@ This should get you started::
     import schunk
     import serial
 
-    mod = schunk.Module(schunk.RS232Connection(
+    mod = schunk.Module(schunk.SerialConnection(
         0x0B, serial.Serial, port=0, baudrate=9600, timeout=1))
 
     mod.move_pos(42)
@@ -155,7 +155,7 @@ separate file, e.g. with the name ``myschunk.py``::
     import schunk
     import serial
     
-    module1 = schunk.Module(schunk.RS232Connection(
+    module1 = schunk.Module(schunk.SerialConnection(
         0x0B, serial.Serial, port=0, baudrate=9600, timeout=1))
 
 and then use it like this in all our scripts::
@@ -173,7 +173,7 @@ own class::
     
     class MySchunkModule(schunk.Module):
         def __init__(self):
-            super().__init__(schunk.RS232Connection(
+            super().__init__(schunk.SerialConnection(
                 0x0B, serial.Serial, port=0, baudrate=9600, timeout=1))
     
     module1 = MySchunkModule()
