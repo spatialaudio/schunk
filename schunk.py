@@ -1004,14 +1004,14 @@ See :attr:`Module.config`.
 unit_systems = {
     0x00: '[mm]',
     0x01: '[m]',
-    0x02: '[Inch]',
+    0x02: '[inches]',
     0x03: '[rad]',
-    0x04: '[Degree]',
-    0x05: '[Intern]',
+    0x04: '[degrees]',
+    0x05: '[internal]',
     0x06: '[µm] Integer',
-    0x07: '[µDegree] Integer',
-    0x08: '[µInch] Integer',
-    0x09: '[Milli - degree] Integer',
+    0x07: '[µdegrees] Integer',
+    0x08: '[µinches] Integer',
+    0x09: '[millidegrees] Integer',
 }
 """Available unit systems.
 
