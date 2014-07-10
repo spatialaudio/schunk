@@ -102,6 +102,15 @@ success_cases = {
         (b'\x05\xB9\x00\x00\xA0\x40', b'\05\x94\x00\x00\x20\x41'),
         10.0),
 
+    # 2.1.11 MOVE CUR (0xB3)
+    'move_cur': (
+        'move_cur',
+        (3.5,),
+        {},
+        b'\x05\xB3\x00\x00\x60\x40',
+        b'\x03\xB3OK',
+        None),
+
     # 2.1.14 SET TARGET VEL (0xA0)
     'set_target_vel': (
         'set_target_vel',

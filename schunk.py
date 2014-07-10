@@ -242,6 +242,10 @@ class Module:
                                      acceleration, current, time,
                                      blocking=True)
 
+    def move_cur(self, current):
+        """2.1.11 MOVE CUR (0xB3)."""
+        self._send(0xB3, struct.pack('<f', current), b'OK')
+
     def set_target_vel(self, velocity):
         """2.1.14 SET TARGET VEL (0xA0).
 
