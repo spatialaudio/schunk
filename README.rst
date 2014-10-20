@@ -41,7 +41,7 @@ Only firmware version 1.56 was tested, other versions may or may not work.
 Requirements
 ------------
 
-Python_ version 3.x is required.
+Python_ version 3.3 or higher is required.
 
 Typically, PySerial_ handles the serial connection,
 but any library with a similar API can be used.
