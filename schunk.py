@@ -507,13 +507,26 @@ class Module:
         with contextlib.closing(self._gen_send(command, data)) as gen:
             return _check_response(next(gen), command, expected)
 
-    def _gen_send(self, command, data=b''):
+    def _gen_send(self, command, data=b'', send_on_exception=None):
         """Send data and return a generator."""
         data = struct.pack('B', command) + data  # prepend command code
         data = struct.pack('B', len(data)) + data  # prepend dlen
-        with contextlib.closing(self._connection.open()) as gen:
+        gen = self._connection.open()
+        try:
             yield gen.send(data)
             yield from gen
+        except GeneratorExit:
+            print("GeneratorExit, doing nothing special")
+            pass
+        except:
+            if send_on_exception is not None:
+                gen.close()
+                gen = self._connection.open()
+                gen.send(send_on_exception)
+                # return value is ignored
+            raise
+        finally:
+            gen.close()
 
     def _move_pos_helper(self, command, *args, blocking=False):
         """Move to the given position.
@@ -539,7 +552,8 @@ class Module:
 
         data = struct.pack('<{}f'.format(n), *args[:n])
 
-        with contextlib.closing(self._gen_send(command, data)) as gen:
+        with contextlib.closing(self._gen_send(
+                command, data, send_on_exception=b'bla')) as gen:
             response = _check_response(next(gen), command)
             if response == b'OK':
                 est_time = 0.0
