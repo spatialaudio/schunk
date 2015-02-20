@@ -504,16 +504,9 @@ class Module:
         is raised.
 
         """
-        with contextlib.closing(self._gen_send(command, data)) as gen:
-            return _check_response(next(gen), command, expected)
-
-    def _gen_send(self, command, data=b''):
-        """Send data and return a generator."""
-        data = struct.pack('B', command) + data  # prepend command code
-        data = struct.pack('B', len(data)) + data  # prepend dlen
         with contextlib.closing(self._connection.open()) as gen:
-            yield gen.send(data)
-            yield from gen
+            response = gen.send(_data_frame(command, data))
+            return _check_response(response, command, expected)
 
     def _move_pos_helper(self, command, *args, blocking=False):
         """Move to the given position.
@@ -539,8 +532,9 @@ class Module:
 
         data = struct.pack('<{}f'.format(n), *args[:n])
 
-        with contextlib.closing(self._gen_send(command, data)) as gen:
-            response = _check_response(next(gen), command)
+        with contextlib.closing(self._connection.open()) as gen:
+            response = gen.send(_data_frame(command, data))
+            response = _check_response(response, command)
             if response == b'OK':
                 est_time = 0.0
             elif len(response) == 4:
@@ -554,6 +548,13 @@ class Module:
                 # 2.2.3 CMD POS REACHED (0x94)
                 position, = _check_response(next(gen), 0x94, '<f')
                 return position
+
+
+def _data_frame(command, data=b''):
+    """Prepend D-Len and command code to binary data."""
+    data = struct.pack('B', command) + data  # prepend command code
+    data = struct.pack('B', len(data)) + data  # prepend dlen
+    return data
 
 
 def _check_response(response, command, expected=None):
