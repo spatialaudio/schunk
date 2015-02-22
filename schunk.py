@@ -532,7 +532,8 @@ class Module:
 
         data = struct.pack('<{}f'.format(n), *args[:n])
 
-        with contextlib.closing(self._connection.open()) as gen:
+        gen = self._connection.open()
+        try:
             response = gen.send(_data_frame(command, data))
             response = _check_response(response, command)
             if response == b'OK':
@@ -548,6 +549,15 @@ class Module:
                 # 2.2.3 CMD POS REACHED (0x94)
                 position, = _check_response(next(gen), 0x94, '<f')
                 return position
+        except (KeyboardInterrupt, SystemExit):
+            gen.close()
+            gen = self._connection.open()
+            # 2.1.19 CMD STOP (0x91)
+            gen.send(b'\x01\x91')
+            # response message is ignored
+            raise
+        finally:
+            gen.close()
 
 
 def _data_frame(command, data=b''):
