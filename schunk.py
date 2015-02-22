@@ -492,6 +492,35 @@ class Module:
         command = {0x88: "ERROR", 0x89: "WARNING", 0x8A: "INFO"}[command]
         return command, error_code, data
 
+    def wait_until_position_reached(self):
+        """Repeatedly check the state until the position is reached.
+
+        This should only be used if impulse messages are disabled (see
+        :meth:`toggle_impulse_message`).
+
+        """
+        gen = self._connection.open()
+        try:
+            while True:
+                # 2.5.1 GET STATE (0x95)
+                response = gen.send(_data_frame(0x95, b'\x00\x00\x00\x00\x01'))
+                if response[1:2] == b'\x94':
+                    # 2.2.3 CMD POS REACHED (0x94) is ignored
+                    response = gen.send(None)
+                position, status, error = _check_response(
+                    response, 0x95, '<fBB')
+                if status & 0x80:  # position reached
+                    return position
+        except (KeyboardInterrupt, SystemExit):
+            gen.close()
+            gen = self._connection.open()
+            # 2.1.19 CMD STOP (0x91)
+            gen.send(b'\x01\x91')
+            # response message is ignored
+            raise
+        finally:
+            gen.close()
+
     def _send(self, command, data=b'', expected=None):
         """Send message, receive response.
 
