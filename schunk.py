@@ -897,7 +897,7 @@ def decode_status(status):
     """
     statuses = ('referenced', 'moving', 'program_mode', 'warning', 'error',
                 'brake', 'move_end', 'position_reached')
-    return {name: bool(status & 2 ** bit) for bit, name in enumerate(statuses)}
+    return {name: bool(status & 1 << bit) for bit, name in enumerate(statuses)}
 
 
 def crc16_increment(crc, data):
