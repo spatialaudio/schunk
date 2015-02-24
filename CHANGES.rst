@@ -1,3 +1,9 @@
+Version 0.2.1 (2015-02-24):
+ * Handle `KeyboardInterrupt` and `SystemExit` in ``*_blocking()``
+ * Add `Module.wait_until_position_reached()` (this also handles
+   `KeyboardInterrupt` and `SystemExit`)
+ * A few bugfixes, refactorings and doc updates
+
 Version 0.2.0 (2014-06-17):
  * Some documentation changes based on a newer version of the Schunk manual
  * Rename everything with "RS232" to "serial" (as in the Schunk manual)
