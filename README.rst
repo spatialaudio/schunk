@@ -2,19 +2,19 @@ Schunk Motion Protocol for Python 3
 ===================================
 
 Documentation:
-  http://schunk.rtfd.org/
+   http://schunk.rtfd.org/
 
 Code:
-  http://github.com/spatialaudio/schunk/
+   http://github.com/spatialaudio/schunk/
 
 Python Package Index:
-  http://pypi.python.org/pypi/SchunkMotionProtocol/
+   http://pypi.python.org/pypi/SchunkMotionProtocol/
 
 Schunk Motion Protocol manual:
-  http://www.schunk.com/schunk_files/attachments/MotionControl_en_2010-03.pdf
+   http://www.schunk.com/schunk_files/attachments/MotionControl_en_2010-03.pdf
 
-  A newer version of the manual is available `in a huge zip file from the Schunk
-  website`__ (have a look in the directory ``Manuals/Motion Control/``)
+   A newer version of the manual is available `in a huge zip file from the
+   Schunk website`__ (have a look in the directory ``Manuals/Motion Control/``)
 
 __ http://www.schunk.com/schunk_files/attachments/MTS_v_1_56_20130904.zip
 
@@ -79,7 +79,7 @@ Installation
 Using `pip <http://www.pip-installer.org/en/latest/installing.html>`_, you can
 download and install the latest release with a single command::
 
-    pip3 install --user SchunkMotionProtocol
+   pip3 install --user SchunkMotionProtocol
 
 If you want to install it system-wide for all users (assuming you have the
 necessary rights), you can just drop the ``--user`` option.
@@ -89,13 +89,13 @@ If you have only Python 3 installed on your system, you probably have to use
 
 To un-install, use::
 
-    pip3 uninstall SchunkMotionProtocol
+   pip3 uninstall SchunkMotionProtocol
 
 If you prefer, you can also download the package from
 `PyPI <https://pypi.python.org/pypi/SchunkMotionProtocol/>`_, extract it, change
 to the main directory and install it using::
 
-    python3 setup.py install --user
+   python3 setup.py install --user
 
 If you have only Python 3 installed on your system, you probably have to use
 ``python`` instead of ``python3``.
@@ -103,19 +103,19 @@ If you have only Python 3 installed on your system, you probably have to use
 If you want to get the newest development version from
 `Github <http://github.com/spatialaudio/schunk/>`_::
 
-    git clone https://github.com/spatialaudio/schunk.git
-    cd schunk
-    python3 setup.py install --user
+   git clone https://github.com/spatialaudio/schunk.git
+   cd schunk
+   python3 setup.py install --user
 
 Alternatively, you can just copy ``schunk.py`` to your working directory.
 
 If you want to make changes to the code, you should type::
 
-    python3 setup.py develop --user
+   python3 setup.py develop --user
 
 or, alternatively::
 
-    pip3 install --user -e .
+   pip3 install --user -e .
 
 ... where ``-e`` stands for ``--editable``.
 
@@ -124,20 +124,20 @@ Tests
 
 Tests are implemented using py.test_, run this in the main directory::
 
-    python3 setup.py test
+   python3 setup.py test
 
 Examples
 --------
 
 This should get you started::
 
-    import schunk
-    import serial
+   import schunk
+   import serial
 
-    mod = schunk.Module(schunk.SerialConnection(
-        0x0B, serial.Serial, port=0, baudrate=9600, timeout=1))
+   mod = schunk.Module(schunk.SerialConnection(
+       0x0B, serial.Serial, port=0, baudrate=9600, timeout=1))
 
-    mod.move_pos(42)
+   mod.move_pos(42)
 
 Use the ID of your Schunk module instead of ``0x0B``.
 
@@ -155,31 +155,31 @@ times).
 If the parameters for your setup don't change, you can write them into a
 separate file, e.g. with the name ``myschunk.py``::
 
-    import schunk
-    import serial
-    
-    module1 = schunk.Module(schunk.SerialConnection(
-        0x0B, serial.Serial, port=0, baudrate=9600, timeout=1))
+   import schunk
+   import serial
+   
+   module1 = schunk.Module(schunk.SerialConnection(
+       0x0B, serial.Serial, port=0, baudrate=9600, timeout=1))
 
 and then use it like this in all our scripts::
 
-    from myschunk import module1
-    module1.move_pos(42)
+   from myschunk import module1
+   module1.move_pos(42)
 
 The file ``myschunk.py`` must be in the current directory for this to work.
 
 If you are an object oriented kind of person, you can of course also write your
 own class::
 
-    import schunk
-    import serial
-    
-    class MySchunkModule(schunk.Module):
-        def __init__(self):
-            super().__init__(schunk.SerialConnection(
-                0x0B, serial.Serial, port=0, baudrate=9600, timeout=1))
-    
-    module1 = MySchunkModule()
-    module1.move_pos(42)
+   import schunk
+   import serial
+   
+   class MySchunkModule(schunk.Module):
+       def __init__(self):
+           super().__init__(schunk.SerialConnection(
+               0x0B, serial.Serial, port=0, baudrate=9600, timeout=1))
+   
+   module1 = MySchunkModule()
+   module1.move_pos(42)
 
 .. vim:textwidth=80

@@ -12,8 +12,8 @@ API Documentation
    from schunk import *
 
 .. automodule:: schunk
-    :members:
-    :undoc-members:
+   :members:
+   :undoc-members:
 
 .. only:: html
 
