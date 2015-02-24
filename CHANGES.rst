@@ -1,16 +1,16 @@
-0.2.0 - 2014-06-17
+Version 0.2.0 (2014-06-17):
  * Some documentation changes based on a newer version of the Schunk manual
  * Rename everything with "RS232" to "serial" (as in the Schunk manual)
 
-0.1.3 - 2014-06-16
+Version 0.1.3 (2014-06-16):
  * Fix version info in setup.py (hopefully it works this time!)
 
-0.1.2 - 2014-06-16
+Version 0.1.2 (2014-06-16):
  * Better installation instructions, including PyPI
  * Proper __version__ attribute
 
-0.1.1 - 2014-06-02
+Version 0.1.1 (2014-06-02):
  * Improvements to setup.py
 
-0.1 - 2014-05-28
+Version 0.1 (2014-05-28):
  * Initial release
