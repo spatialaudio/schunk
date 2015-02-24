@@ -406,6 +406,9 @@ class DummySerialManager:
         self._answer = self._answer[n:]
         return result
 
+    def flushInput(self):
+        pass
+
 
 serial_success_cases = {
     # 6.1.1.1 Referencing

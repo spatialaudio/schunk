@@ -858,7 +858,7 @@ class SerialConnection:
         response = None
         with self._serialmanager(*self._serial_args,
                                  **self._serial_kwargs) as serial:
-
+            serial.flushInput()
             while True:
                 next_msg = yield response
 
