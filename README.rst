@@ -7,6 +7,9 @@ Documentation:
 Code:
   http://github.com/spatialaudio/schunk/
 
+Python Package Index:
+  http://pypi.python.org/pypi/SchunkMotionProtocol/
+
 Schunk Motion Protocol manual:
   http://www.schunk.com/schunk_files/attachments/MotionControl_en_2010-03.pdf
 
