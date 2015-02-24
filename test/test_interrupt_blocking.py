@@ -18,12 +18,12 @@ class RaisingConnection:
         if data == b'\x05\xB0\x00\x00\x20\x41':  # MOVE POS 10.0
             if self._immediately:
                 raise self._exc_class()
-            yield b'\x05\xB0????'  # estimated time is ignored
+            yield bytearray(b'\x05\xB0????')  # estimated time is ignored
             if not self._immediately:
                 raise self._exc_class()
         elif data == b'\x01\x91':  # CMD STOP
             self.stopped = True
-            yield b'?'  # returned data is ignored
+            yield NotImplemented  # returned data is ignored
             raise RuntimeError("Too many calls to the generator!")
         else:
             raise RuntimeError("Unexpected data: {}".format(data))

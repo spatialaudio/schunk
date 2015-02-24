@@ -23,7 +23,7 @@ setup(
 
     author="Matthias Geier",
     author_email="Matthias.Geier@gmail.com",
-    description="Schunk Motion Protocol for Python 3",
+    description="Schunk Motion Protocol for Python",
     long_description=open('README.rst').read(),
     license="MIT",
     keywords="Schunk serial servo motor".split(),
@@ -34,6 +34,8 @@ setup(
         "Development Status :: 3 - Alpha",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 3",
         "Topic :: Scientific/Engineering",
     ],

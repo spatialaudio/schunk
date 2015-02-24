@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# Schunk Motion Protocol for Python 3 documentation build configuration file, created by
+# Schunk Motion Protocol for Python documentation build configuration file, created by
 # sphinx-quickstart on Sun May 18 18:52:32 2014.
 #
 # This file is execfile()d with the current directory set to its
@@ -69,7 +69,7 @@ master_doc = 'index'
 
 # General information about the project.
 author = 'Matthias Geier'
-project = 'Schunk Motion Protocol for Python 3'
+project = 'Schunk Motion Protocol for Python'
 copyright = '2015, ' + author
 
 # The version info for the project you're documenting, acts as replacement for
@@ -206,7 +206,7 @@ html_show_sourcelink = True
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'SchunkMotionProtocolforPython3doc'
+htmlhelp_basename = 'SchunkMotionProtocolforPython'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -228,7 +228,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'SchunkMotionProtocolforPython3.tex', project,
+  ('index', 'SchunkMotionProtocolforPython.tex', project,
    author, 'howto'),
 ]
 

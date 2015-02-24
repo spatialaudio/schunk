@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Copyright (c) 2014-2015 Matthias Geier
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-"""Schunk Motion Protocol for Python 3.
+"""Schunk Motion Protocol for Python.
 
 See http://schunk.rtfd.org/
 
@@ -63,7 +65,7 @@ class Module:
             coroutine.  This coroutine must accept a bytes object and
             send it to a Schunk module, read the response (taking D-Len
             into account) and yield the response (and further messages)
-            as a bytes object.
+            as a bytearray.
 
             :class:`SerialConnection` happens to do exactly that.
 
@@ -241,7 +243,7 @@ class Module:
         Initially, the target velocity is set to 10% of the maximum.
 
         """
-        self._send(0xA0, struct.pack('<f', velocity), b'OK')
+        self._send(0xA0, struct.pack('<f', velocity), expected=b'OK')
 
     def set_target_acc(self, acceleration):
         """2.1.15 SET TARGET ACC (0xA1).
@@ -249,7 +251,7 @@ class Module:
         Initially, the target acceleration is set to 10% of the maximum.
 
         """
-        self._send(0xA1, struct.pack('<f', acceleration), b'OK')
+        self._send(0xA1, struct.pack('<f', acceleration), expected=b'OK')
 
     def set_target_jerk(self, jerk):
         """2.1.16 SET TARGET JERK (0xA2).
@@ -257,7 +259,7 @@ class Module:
         Initially, the target jerk is set to 50% of the maximum.
 
         """
-        self._send(0xA2, struct.pack('<f', jerk), b'OK')
+        self._send(0xA2, struct.pack('<f', jerk), expected=b'OK')
 
     def set_target_cur(self, current):
         """2.1.17 SET TARGET CUR (0xA3).
@@ -265,11 +267,11 @@ class Module:
         Initially, the target current is set to the nominal current.
 
         """
-        self._send(0xA3, struct.pack('<f', current), b'OK')
+        self._send(0xA3, struct.pack('<f', current), expected=b'OK')
 
     def set_target_time(self, time):
         """2.1.18 SET TARGET TIME (0xA4)."""
-        self._send(0xA4, struct.pack('<f', time), b'OK')
+        self._send(0xA4, struct.pack('<f', time), expected=b'OK')
 
     def stop(self):
         """2.1.19 CMD STOP (0x91)."""
@@ -436,7 +438,7 @@ class Module:
             ``True`` on success.
 
         """
-        response = self._send(0xE4, expected=_test_format_string)
+        response = self._send(0xE4, fmt=_test_format_string)
         if response != _test_values:
             raise SchunkError("Wrong response: {}".format(response))
         return True
@@ -451,7 +453,7 @@ class Module:
 
         """
         data = struct.pack(_test_format_string, *_test_values)
-        self._send(0xE5, data, b'OK\x00')
+        self._send(0xE5, data, expected=b'OK\x00')
         return True
 
     def ack(self):
@@ -481,7 +483,7 @@ class Module:
             ``INFO FAILED (0x05)``.
 
         """
-        command, error_code, data = self._send(0x96, expected='<BBf')
+        command, error_code, data = self._send(0x96, fmt='<BBf')
         command = {0x88: "ERROR", 0x89: "WARNING", 0x8A: "INFO"}[command]
         return command, error_code, data
 
@@ -497,7 +499,7 @@ class Module:
             while True:
                 # 2.5.1 GET STATE (0x95)
                 response = gen.send(_data_frame(0x95, b'\x00\x00\x00\x00\x01'))
-                if response[1:2] == b'\x94':
+                if response[1] == 0x94:
                     # 2.2.3 CMD POS REACHED (0x94) is ignored
                     response = gen.send(None)
                 position, status, error = _check_response(
@@ -514,7 +516,7 @@ class Module:
         finally:
             gen.close()
 
-    def _send(self, command, data=b'', expected=None):
+    def _send(self, command, data=b'', fmt=None, expected=None):
         """Send message, receive response.
 
         If the expected number of bytes doesn't match, an error is
@@ -528,9 +530,9 @@ class Module:
         """
         with contextlib.closing(self._connection.open()) as gen:
             response = gen.send(_data_frame(command, data))
-            return _check_response(response, command, expected)
+            return _check_response(response, command, fmt, expected)
 
-    def _move_pos_helper(self, command, *args, blocking=False):
+    def _move_pos_helper(self, command, *args, **kwargs):
         """Move to the given position.
 
         If blocking=False, the movement is started and the estimated
@@ -554,6 +556,10 @@ class Module:
 
         data = struct.pack('<{}f'.format(n), *args[:n])
 
+        # Work-around since Python 2 doesn't support keyword-only args:
+        blocking = kwargs.pop('blocking', False)
+        assert not kwargs
+
         gen = self._connection.open()
         try:
             response = gen.send(_data_frame(command, data))
@@ -561,7 +567,7 @@ class Module:
             if response == b'OK':
                 est_time = 0.0
             elif len(response) == 4:
-                est_time, = struct.unpack('<f', response)
+                est_time, = struct.unpack_from('<f', response)
             else:
                 raise SchunkError("Unexpected reponse: {}".format(response))
 
@@ -583,17 +589,20 @@ class Module:
 
 
 def _data_frame(command, data=b''):
-    """Prepend D-Len and command code to binary data."""
-    data = struct.pack('B', command) + data  # prepend command code
-    data = struct.pack('B', len(data)) + data  # prepend dlen
-    return data
+    """Create a bytearray of D-Len, command code and binary data."""
+    frame = bytearray()
+    frame.append(len(data) + 1)  # command byte is counted!
+    frame.append(command)
+    frame.extend(data)
+    return frame
 
 
-def _check_response(response, command, expected=None):
-    """Check if the response has the correct format."""
+def _check_response(response, command, fmt=None, expected=None):
+    """Check if the response has the correct format/content."""
     if len(response) < 2:
         raise SchunkError("Not enough data in response")
-    dlen, cmd_code = response[:2]
+    dlen = response[0]
+    cmd_code = response[1]
     if dlen != len(response) - 1:
         raise SchunkError("D-Len mismatch in response")
     if dlen == 2:
@@ -611,28 +620,20 @@ def _check_response(response, command, expected=None):
     if cmd_code != command:
         raise SchunkError(
             "Unexpected command code in response: {}".format(hex(cmd_code)))
-    response = response[2:]  # remove D-Len and command code
-
-    if isinstance(expected, bytes):
-        if response == expected:
-            return
-        else:
-            err = "Unexpected response: {} instead of {}"
-            raise SchunkError(err.format(response, expected))
-
-    format_string = None
-    if isinstance(expected, str):
-        format_string = expected
-        expected = struct.calcsize(format_string)
+    del response[:2]  # remove D-Len and command code
 
     if expected is not None:
-        if len(response) != expected:
+        if fmt is not None:
+            raise TypeError("At least one of {fmt, expected} must be None")
+        if response != expected:
+            err = "Unexpected response: {} instead of {}"
+            raise SchunkError(err.format(response, expected))
+    if fmt is not None:
+        size = struct.calcsize(fmt)
+        if len(response) != size:
             err = "Unexpected payload size in reponse: {} instead of {}"
-            raise SchunkError(err.format(len(response), expected))
-
-    if format_string is not None:
-        response = struct.unpack(format_string, response)
-
+            raise SchunkError(err.format(len(response), size))
+        response = struct.unpack_from(fmt, response)
     return response
 
 
@@ -699,7 +700,7 @@ class _Config:
             raise AttributeError("Invalid parameter: {}".format(name))
 
         if cmd_byte is None:
-            result, = self._module._send(0x80, expected=format_string)
+            result, = self._module._send(0x80, fmt=format_string)
             firstbyte = None
         elif format_string is None:
             result = self._module._send(0x80, cmd_byte)
@@ -856,16 +857,19 @@ class SerialConnection:
                 next_msg = yield response
 
                 if next_msg is not None:
-                    next_msg = struct.pack('BB', 0x05, self._id) + next_msg
-                    next_msg += crc16(next_msg)
-                    if serial.write(next_msg) != len(next_msg):
+                    frame = bytearray()
+                    frame.append(0x05)
+                    frame.append(self._id)
+                    frame.extend(next_msg)
+                    frame.extend(crc16(frame))
+                    if serial.write(frame) != len(frame):
                         raise SchunkSerialError("Error sending data")
 
-                header = serial.read(3)
-                if len(header) < 3:
+                response = serial.read(3)
+                if len(response) < 3:
                     raise SchunkSerialError("Error reading response")
-
-                msg_type, module_id, dlen = header
+                response = bytearray(response)
+                msg_type, module_id, dlen = response
                 if module_id != self._id:
                     raise SchunkSerialError("Module ID mismatch")
                 elif msg_type not in (0x03, 0x07):
@@ -874,14 +878,14 @@ class SerialConnection:
                         "0x{:02X}".format(msg_type))
                 crclen = 2
                 the_rest = serial.read(dlen + crclen)
-
                 if len(the_rest) < dlen + crclen:
                     raise SchunkSerialError("Not enough data in response")
-
-                crc = the_rest[-crclen:]
-                the_rest = the_rest[:-crclen]
-                if crc != crc16(header + the_rest):
+                response.extend(the_rest)
+                crc = response[-crclen:]
+                del response[-crclen:]  # Remove CRC
+                if crc != crc16(response):
                     raise SchunkSerialError("CRC error in response")
+                del response[:2]  # Remove first 2 bytes, leaving dlen intact
 
                 if msg_type == 0x03 and dlen != 2:
                     # This should never happen, but who knows ...
@@ -890,8 +894,6 @@ class SerialConnection:
                             dlen, the_rest))
 
                 # Note: error checking (if dlen == 2) is not done here
-
-                response = struct.pack('B', dlen) + the_rest
 
 
 class SchunkSerialError(SchunkError):
@@ -966,7 +968,7 @@ def crc16(data):
 
     Parameters
     ----------
-    data : iterable of integers (0..255) or bytes
+    data : iterable of integers (0..255)
         A sequece of bytes.
 
     Returns

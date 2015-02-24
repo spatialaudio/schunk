@@ -25,22 +25,22 @@ class DummyConnection:
                     if self._exc_class:
                         raise self._exc_class()
                     # reached 0.0
-                    yield b'\x07\x95\x00\x00\x00\x00\x80\x00'
+                    yield bytearray(b'\x07\x95\x00\x00\x00\x00\x80\x00')
                     raise RuntimeError("Too many calls to the generator!")
                 elif self._count == 2:
                     # Impulse message is ignored and next() is called:
                     # CMD POS REACHED 0.0
-                    response = b'\x05\x94\x00\x00\x00\x00'
+                    response = bytearray(b'\x05\x94\x00\x00\x00\x00')
                 else:
                     # not reached
-                    response = b'\x07\x95\x00\x00\x00\x00\x7F\x00'
+                    response = bytearray(b'\x07\x95\x00\x00\x00\x00\x7F\x00')
             elif data == b'\x01\x91':  # CMD STOP
                 self.stopped = True
-                yield b'?'  # returned data is ignored
+                yield NotImplemented  # returned data is ignored
                 raise RuntimeError("Too many calls to the generator!")
             elif data is None:  # request more data after impulse message
                 # not reached
-                response = b'\x07\x95\x00\x00\x00\x00\x7F\x00'
+                response = bytearray(b'\x07\x95\x00\x00\x00\x00\x7F\x00')
             else:
                 raise RuntimeError("Unexpected data: {}".format(data))
 

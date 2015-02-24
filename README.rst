@@ -1,5 +1,5 @@
-Schunk Motion Protocol for Python 3
-===================================
+Schunk Motion Protocol for Python
+=================================
 
 Documentation:
    http://schunk.rtfd.org/
@@ -44,7 +44,7 @@ Only firmware version 1.56 was tested, other versions may or may not work.
 Requirements
 ------------
 
-Python_ version 3.3 or higher is required.
+Obviously, Python_ is required.  Any version >= 2.7 should do.
 
 Typically, PySerial_ handles the serial connection,
 but any library with a similar API can be used.
@@ -79,43 +79,37 @@ Installation
 Using `pip <http://www.pip-installer.org/en/latest/installing.html>`_, you can
 download and install the latest release with a single command::
 
-   pip3 install --user SchunkMotionProtocol
+   pip install --user SchunkMotionProtocol
 
 If you want to install it system-wide for all users (assuming you have the
 necessary rights), you can just drop the ``--user`` option.
 
-If you have only Python 3 installed on your system, you probably have to use
-``pip`` instead of ``pip3``.
-
 To un-install, use::
 
-   pip3 uninstall SchunkMotionProtocol
+   pip uninstall SchunkMotionProtocol
 
 If you prefer, you can also download the package from
 `PyPI <https://pypi.python.org/pypi/SchunkMotionProtocol/>`_, extract it, change
 to the main directory and install it using::
 
-   python3 setup.py install --user
-
-If you have only Python 3 installed on your system, you probably have to use
-``python`` instead of ``python3``.
+   python setup.py install --user
 
 If you want to get the newest development version from
 `Github <http://github.com/spatialaudio/schunk/>`_::
 
    git clone https://github.com/spatialaudio/schunk.git
    cd schunk
-   python3 setup.py install --user
+   python setup.py install --user
 
 Alternatively, you can just copy ``schunk.py`` to your working directory.
 
 If you want to make changes to the code, you should type::
 
-   python3 setup.py develop --user
+   python setup.py develop --user
 
 or, alternatively::
 
-   pip3 install --user -e .
+   pip install --user -e .
 
 ... where ``-e`` stands for ``--editable``.
 
@@ -124,7 +118,7 @@ Tests
 
 Tests are implemented using py.test_, run this in the main directory::
 
-   python3 setup.py test
+   python setup.py test
 
 Examples
 --------
@@ -168,7 +162,7 @@ and then use it like this in all our scripts::
 
 The file ``myschunk.py`` must be in the current directory for this to work.
 
-If you are an object oriented kind of person, you can of course also write your
+If you are an object-oriented kind of person, you can of course also write your
 own class::
 
    import schunk
@@ -176,7 +170,7 @@ own class::
    
    class MySchunkModule(schunk.Module):
        def __init__(self):
-           super().__init__(schunk.SerialConnection(
+           schunk.Module.__init__(self, schunk.SerialConnection(
                0x0B, serial.Serial, port=0, baudrate=9600, timeout=1))
    
    module1 = MySchunkModule()

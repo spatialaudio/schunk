@@ -6,7 +6,7 @@ import pytest
 
 class DummyConnection:
     def __init__(self, expected, answer):
-        self._expected = expected
+        self._expected = bytearray(expected)
         self._answer = answer
 
     @schunk.coroutine
@@ -14,9 +14,10 @@ class DummyConnection:
         data = yield
         assert data == self._expected
         if isinstance(self._answer, bytes):
-            yield self._answer
+            yield bytearray(self._answer)
         else:
-            yield from self._answer
+            for a in self._answer:
+                yield bytearray(a)
         # The generator must be closed before reaching this:
         raise RuntimeError("Too many calls to the generator!")
 
@@ -384,10 +385,10 @@ def test_get_config(property, expected_bytes, answer_bytes, expected_result):
 
 class DummySerialManager:
     def __init__(self, expected, answer):
-        for data in expected, answer:
+        self._expected = bytearray(expected)
+        self._answer = bytearray(answer)
+        for data in self._expected, self._answer:
             assert data[-2:] == schunk.crc16(data[:-2])
-        self._expected = expected
-        self._answer = answer
 
     def __enter__(self):
         return self
