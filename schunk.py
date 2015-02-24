@@ -20,14 +20,7 @@
 
 """Schunk Motion Protocol for Python 3.
 
-Documentation:
-  http://schunk.rtfd.org/
-
-Code:
-  http://github.com/spatialaudio/schunk/
-
-Schunk Motion Protocol manual:
-  http://www.schunk.com/schunk_files/attachments/MotionControl_en_2010-03.pdf
+See http://schunk.rtfd.org/
 
 Example
 -------
