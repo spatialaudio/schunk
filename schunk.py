@@ -530,6 +530,9 @@ class Module:
         """
         with contextlib.closing(self._connection.open()) as gen:
             response = gen.send(_data_frame(command, data))
+            if response[1] == 0x94:
+                # 2.2.3 CMD POS REACHED (0x94) is ignored
+                response = gen.send(None)
             return _check_response(response, command, fmt, expected)
 
     def _move_pos_helper(self, command, *args, **kwargs):
@@ -563,6 +566,9 @@ class Module:
         gen = self._connection.open()
         try:
             response = gen.send(_data_frame(command, data))
+            if response[1] == 0x94:
+                # 2.2.3 CMD POS REACHED (0x94) is ignored
+                response = gen.send(None)
             response = _check_response(response, command)
             if response == b'OK':
                 est_time = 0.0
