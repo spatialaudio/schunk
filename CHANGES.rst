@@ -1,3 +1,7 @@
+Version 0.2.2 (2015-03-03):
+ * Python 2.x support
+ * better handling (= ignoring) of impulse messages
+
 Version 0.2.1 (2015-02-24):
  * Handle `KeyboardInterrupt` and `SystemExit` in ``*_blocking()``
  * Add `Module.wait_until_position_reached()` (this also handles
