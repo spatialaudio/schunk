@@ -40,6 +40,6 @@ setup(
         "Topic :: Scientific/Engineering",
     ],
 
-    tests_require=['pytest'],
+    tests_require=['pytest', 'pyserial'],
     cmdclass={'test': PyTest},
 )
