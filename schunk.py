@@ -47,7 +47,6 @@ import functools
 
 
 class Module:
-
     """A Schunk module.
 
     For further documentation see the __init__() docstring (which is
@@ -645,11 +644,11 @@ def _check_response(response, command, fmt=None, expected=None):
 
 class SchunkError(Exception):
     """This exception is raised on all kinds of errors."""
+
     pass
 
 
 class _Config:
-
     """Helper class for the Module.config property."""
 
     _params = {
@@ -749,7 +748,6 @@ def coroutine(func):
 
 
 class SerialConnection:
-
     """A serial connection.
 
     For further documentation see the __init__() docstring.
@@ -917,6 +915,7 @@ class SchunkSerialError(SchunkError):
             ...
 
     """
+
     pass
 
 

@@ -169,6 +169,7 @@ own class::
    import serial
    
    class MySchunkModule(schunk.Module):
+
        def __init__(self):
            schunk.Module.__init__(self, schunk.SerialConnection(
                0x0B, serial.Serial, port=0, baudrate=9600, timeout=1))

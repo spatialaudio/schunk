@@ -5,6 +5,7 @@ import pytest
 
 
 class DummyConnection:
+
     def __init__(self, expected, answer):
         self._expected = bytearray(expected)
         self._answer = answer
@@ -384,6 +385,7 @@ def test_get_config(property, expected_bytes, answer_bytes, expected_result):
 
 
 class DummySerialManager:
+
     def __init__(self, expected, answer):
         self._expected = bytearray(expected)
         self._answer = bytearray(answer)
