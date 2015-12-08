@@ -10,6 +10,9 @@ Code:
 Python Package Index:
    http://pypi.python.org/pypi/SchunkMotionProtocol/
 
+License:
+   MIT -- see the file ``LICENSE`` for details.
+
 Schunk Motion Protocol manual:
    http://www.schunk.com/schunk_files/attachments/MotionControl_en_2010-03.pdf
 
