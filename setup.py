@@ -44,4 +44,5 @@ setup(
 
     tests_require=['pytest', 'pyserial'],
     cmdclass={'test': PyTest},
+    zip_safe=True,
 )
